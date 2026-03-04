@@ -1,11 +1,7 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.integrate import solve_ivp
-from scipy.optimize import differential_evolution
 
 def modelo(t,y,p):
-
+ 
     V   = y[0]
     Ap  = y[1]
     ApM = y[2]
@@ -23,13 +19,11 @@ def modelo(t,y,p):
     C   = y[14]
     Nk   = y[15]
 
-    
     Ap0  = p['Ap0']
     ThN0 = p['ThN0']
     TkN0 = p['TkN0']
     B0   = p['B0']
     NK0  = p['NK0']
-
 
     dVdt   = p['pi_v']*V - p['kv1']*V*IgG - p['kv1']*V*IgM - p['kv2']*V*TkE - p['kv3']*V*ApM 
     dApdt  = p['alpha_ap']*(C + 1.0)*(Ap0 - Ap) - p['beta_ap']*Ap*((p['cap1']*V)/(p['cap2'] + V))
@@ -46,19 +40,22 @@ def modelo(t,y,p):
     dIgMdt = p['pi_ps']*Ps - p['delta_am']*IgM
     dIgGdt = p['pi_pl']*Pl - p['delta_ag']*IgG
     dCdt   = p['pi_capm']*ApM + p['pi_ci']*I + p['pi_ctke']*TkE + p['pi_cnk']*Nk - p['gama_c']*C
-    dNkdt  = p['qn']*( p['Nmax'] - Nk ) * I - p['dn'] * (Nk - NK0) 
+    dNkdt  = p['qn'] * (NK0 - Nk) * I - (p['dn'] * Nk)
+
     dydt = [dVdt, dApdt, dApMdt, dIdt, dThNdt, 
             dThEdt, dTkNdt, dTkEdt, dBdt, dPsdt,
             dPldt, dBmdt,  dIgMdt,  dIgGdt, dCdt, dNkdt]
 
     return dydt
-
+ 
+# Todos os dados extraídos não tem log
 def carrega_dados():
     dataset_viremia = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\Viral_load.csv", sep = ',')
     dataset_il6 = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\dataset_il6_survivor.csv", sep = ',')
     dataset_IgG = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgG_data.csv", sep = ',')
     dataset_IgM = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgM_data.csv",sep = ',')
-    return dataset_viremia, dataset_il6, dataset_IgG, dataset_IgM
+    dataset_NK = pd.read_csv(r'C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\NK_covid_severo.csv', sep = ',')
+    return dataset_viremia, dataset_il6, dataset_IgG, dataset_IgM, dataset_NK
 
 # Parâmetros
 pars = {}
@@ -125,14 +122,27 @@ Bm0  = 0.0   # cells/mL
 IgM0 = 0.0   # S/CO
 IgG0 = 0.0   # S/CO
 C0   = 0.0   # pg/mL
-NK0  = 2.0e5
+NK0  = 1.0e5
 
+pars['V0'] = V0
 pars['Ap0'] = Ap0
+pars['ApM0'] = ApM0
+pars['I0'] = I0
 pars['ThN0'] = ThN0
+pars['ThE0'] = ThE0
 pars['TkN0'] = TkN0
+pars['TkE0'] = TkE0
 pars['B0'] = B0
-pars['NK0'] = NK0  
-pars['Nmax'] = 5.0e5 
+pars['Ps0'] = Ps0
+pars['Pl0'] = Pl0
+pars['Bm0'] = Bm0
+pars['IgM0'] = IgM0
+pars['IgG0'] = IgG0
+pars['C0'] = C0
+pars['NK0'] = NK0
 
-y0 = [V0, Ap0, ApM0, I0, ThN0, ThE0, TkN0, TkE0, B0, Ps0, 
-      Pl0, Bm0, IgM0, IgG0, C0, NK0]
+y0 = [V0, Ap0, ApM0, I0, ThN0, ThE0, TkN0, TkE0, 
+      B0, Ps0, Pl0, Bm0, IgM0, IgG0, C0, NK0]
+
+params_ajs = ['V0', 'pi_v', 'kv1', 'kv2', 'kv3', 'beta_ap', 'beta_apm', 'beta_tke', 'pi_capm', 'pi_ci', 
+              'pi_ctke', 'gama_c', 'qn', 'dn', 'gamma_ink', 'gamma_itk', 'pi_cnk', 'NK0']
