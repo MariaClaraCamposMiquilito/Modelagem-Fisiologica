@@ -17,7 +17,7 @@ def modelo(t,y,p):
     IgM = y[12]
     IgG = y[13]
     C   = y[14]
-    Nk   = y[15]
+    Nk  = y[15]
 
     Ap0  = p['Ap0']
     ThN0 = p['ThN0']
@@ -28,7 +28,7 @@ def modelo(t,y,p):
     dVdt   = p['pi_v']*V - p['kv1']*V*IgG - p['kv1']*V*IgM - p['kv2']*V*TkE - p['kv3']*V*ApM 
     dApdt  = p['alpha_ap']*(C + 1.0)*(Ap0 - Ap) - p['beta_ap']*Ap*((p['cap1']*V)/(p['cap2'] + V))
     dApMdt = p['beta_ap']*Ap*((p['cap1']*V)/(p['cap2'] + V)) - p['beta_apm']*ApM*V - p['gama_apm']*ApM 
-    dIdt   = p['beta_apm']*ApM*V + p['beta_tke']*TkE*V - p['gama_apm']*I - p['gamma_ink']*Nk*I - p['gamma_itk']*TkE*I
+    dIdt   = p['beta_apm']*ApM*V + p['beta_tke']*TkE*V - p['gama_apm']*I - p['gamma_ink']*Nk*I
     dThNdt = p['alpha_th']*(ThN0 - ThN) - p['beta_th']*ApM*ThN
     dThEdt = p['beta_th']*ApM*ThN + p['pi_th']*ApM*ThE - p['delta_th']*ThE 
     dTkNdt = p['alpha_tk']*(C + 1)*(TkN0 - TkN) - p['beta_tk']*(C + 1)*ApM*TkN
@@ -39,22 +39,21 @@ def modelo(t,y,p):
     dBmdt  = p['beta_bm']*ThE*B + p['pi_bm1']*Bm*(1.0 - (Bm/p['pi_bm2'])) - p['delta_bm']*Bm
     dIgMdt = p['pi_ps']*Ps - p['delta_am']*IgM
     dIgGdt = p['pi_pl']*Pl - p['delta_ag']*IgG
-    dCdt   = p['pi_capm']*ApM + p['pi_ci']*I + p['pi_ctke']*TkE + p['pi_cnk']*Nk - p['gama_c']*C
-    dNkdt  = p['qn'] * (NK0 - Nk) * I - (p['dn'] * Nk)
+    dCdt   = p['pi_capm']*ApM + p['pi_ci']*I + p['pi_ctke']*TkE + p['pi_cnk']*Nk - p['gama_c']*C  
+    dNkdt  = p['qn'] * (p['Nmax'] - Nk) * I + (p['dn'] * (NK0 - Nk))
 
-    dydt = [dVdt, dApdt, dApMdt, dIdt, dThNdt, 
-            dThEdt, dTkNdt, dTkEdt, dBdt, dPsdt,
-            dPldt, dBmdt,  dIgMdt,  dIgGdt, dCdt, dNkdt]
+    dydt = [dVdt, dApdt, dApMdt, dIdt, dThNdt,  dThEdt, dTkNdt, dTkEdt, 
+            dBdt, dPsdt, dPldt, dBmdt,  dIgMdt,  dIgGdt, dCdt, dNkdt]
 
     return dydt
  
 # Todos os dados extraídos não tem log
 def carrega_dados():
-    dataset_viremia = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\Viral_load.csv", sep = ',')
-    dataset_il6 = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\dataset_il6_survivor.csv", sep = ',')
-    dataset_IgG = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgG_data.csv", sep = ',')
-    dataset_IgM = pd.read_csv(r"C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgM_data.csv",sep = ',')
-    dataset_NK = pd.read_csv(r'C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\NK_covid_severo.csv', sep = ',')
+    dataset_viremia = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\Viral_load.csv", sep = ',')
+    dataset_il6 = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\dataset_il6_survivor.csv", sep = ',')
+    dataset_IgG = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgG_data.csv", sep = ',')
+    dataset_IgM = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgM_data.csv",sep = ',')
+    dataset_NK = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\NK_covid_severo.csv", sep = ',')
     return dataset_viremia, dataset_il6, dataset_IgG, dataset_IgM, dataset_NK
 
 # Parâmetros
@@ -103,7 +102,7 @@ pars['gama_c']   = 7.04e2
 pars['qn']       = 0.52 # Taxa de 
 pars['dn']       = 0.07 # Taxa de decaimento natural das Natural Killers
 pars['gamma_ink'] =  0.000574 # Taxa de morte das células Infectadas pelas NK
-pars['gamma_itk'] = 0.001 # Taxa de morte das células Infectadas pelas NK
+#pars['gamma_itk'] = 0.001 # Taxa de morte das células Infectadas pelas NK
 pars['pi_cnk']    = 0.01 # Taxa de produção de citocinas pelas NK
 
 # condicoes Iniciais 
@@ -123,6 +122,7 @@ IgM0 = 0.0   # S/CO
 IgG0 = 0.0   # S/CO
 C0   = 0.0   # pg/mL
 NK0  = 1.0e5
+Nmax = 3.0e6
 
 pars['V0'] = V0
 pars['Ap0'] = Ap0
@@ -140,9 +140,11 @@ pars['IgM0'] = IgM0
 pars['IgG0'] = IgG0
 pars['C0'] = C0
 pars['NK0'] = NK0
+pars['Nmax'] = Nmax
 
-y0 = [V0, Ap0, ApM0, I0, ThN0, ThE0, TkN0, TkE0, 
-      B0, Ps0, Pl0, Bm0, IgM0, IgG0, C0, NK0]
+y0 = [V0, Ap0, ApM0, I0, ThN0, ThE0, TkN0, TkE0, B0, Ps0, Pl0, Bm0, IgM0, IgG0, C0, NK0]
 
-params_ajs = ['V0', 'pi_v', 'kv1', 'kv2', 'kv3', 'beta_ap', 'beta_apm', 'beta_tke', 'pi_capm', 'pi_ci', 
-              'pi_ctke', 'gama_c', 'qn', 'dn', 'gamma_ink', 'gamma_itk', 'pi_cnk', 'NK0']
+
+params_ajs = ['V0', 'pi_v', 'kv1', 'kv2', 'kv3', 'beta_ap', 'beta_apm', 
+              'beta_tke', 'gama_apm','pi_bm1', 'pi_ps', 'pi_capm', 'pi_ci', 'pi_ctke', 'gama_c', 
+              'qn', 'dn', 'gamma_ink', 'pi_cnk', 'NK0', 'Nmax']

@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import differential_evolution
-from modelo_covid19_ajustado import modelo, carrega_dados, pars, y0, params_ajs
-
+from modelo_covid19_ajustado import modelo, carrega_dados, pars, y0
+ 
 # Arrumando os dados experimentais -> pega o x e o y dos datasets referente às médias
 viremia, il6, igg, igm, nk = carrega_dados()
 data_v = (viremia[viremia.type == 'mean']['x'].values, viremia[viremia.type == 'mean']['y'].values)
@@ -11,29 +11,32 @@ data_g = (igg[igg.type == 'mean']['x'].values, igg[igg.type == 'mean']['y'].valu
 data_m = (igm[igm.type == 'mean']['x'].values, igm[igm.type == 'mean']['y'].values)
 data_n = (nk['x'].values, nk['y'].values)
 
-keys_pars = [k for k in params_ajs]
+# Retirando as condições iniciais fixas do dicionário, para elas não serem ajustadas
+keys_pars = [k for k in pars.keys() if k not in ['Ap0', 'ThN0', 'TkN0', 'B0', 'NK0']]
 
 # Espaço de busca
-bounds = [
-    [1.0, 1e3],          # V0
-    [0.8, 1.5],          # pi_v
-    [1e-5, 1e-2],        # kv1
-    [1e-7, 1e-4],        # kv2
-    [1e-4, 0.5],         # kv3
-    [1e-5, 1.0],         # beta_ap
-    [1e-3, 1.0],         # beta_apm
-    [1e-6, 1e-4],        # beta_tke
-    [1.0, 500.0],        # pi_capm
-    [5e-3, 0.1],         # pi_ci
-    [1e-5, 0.1],         # pi_ctke
-    [10.0, 1000.0],      # gama_c
-    [0.05, 0.5e1],       # qn:
-    [1.0e-3, 0.5],       # dn: 
-    [6e-7, 6e7],         # gamma_ink
-    [1e-4, 1e4],         # gamma_itk
-    [1e-3, 1e3],         # pi_cnk
-    [1e4, 1e6]           # NK0
-]
+bounds_taxa_decaimento = { 
+    'pi_v'      : (1.40, 3),
+    'kv1'       : (1e-4, 1e-2),
+    'kv2'       : (1e-6, 1e-4),
+    'kv3'       : (1e-3, 1e-2),
+    'gama_apm'  : (0.03, 0.04),
+    'beta_apm'  : (0.008, 0.009),
+    'beta_tke'  : (0.000003, 0.000004),
+    'pi_capm'   : (10, 150),
+    'gama_c'    : (100, 800),
+    'qn'        : (0.2, 0.4),
+    'dn'        : (0.07, 0.1),
+    'gamma_ink' : (0.00008, 0.00009)
+}
+bounds = []
+
+for k in keys_pars:
+    if k in bounds_taxa_decaimento:
+        bounds.append(bounds_taxa_decaimento[k])
+    else:
+        val = pars[k]
+        bounds.append((val * 0.5, val * 1.5))
 
 # Tempo de simulação
 tf = 37.0 # dias
@@ -78,16 +81,10 @@ def modelo_objetivo(params):
     for i, key in enumerate(keys_pars):
         p[key] = params[i]
 
-    y0_simulacao = [
-        p['V0'], p['Ap0'], p['ApM0'], p['I0'], p['ThN0'], p['ThE0'], 
-        p['TkN0'], p['TkE0'], p['B0'], p['Ps0'], p['Pl0'], p['Bm0'], 
-        p['IgM0'], p['IgG0'], p['C0'], p['NK0']
-    ]
-
     sol = solve_ivp(
         modelo, 
         [0, tf], 
-        y0_simulacao, 
+        y0, 
         args = (p,), 
         method ='Radau', # Resolver EDOs rígidas
         t_eval = t)
@@ -134,24 +131,21 @@ def modelo_objetivo(params):
     res_total = (np.mean((z_v_model - z_data_v)**2) + 
                  np.mean((z_m_model - z_data_m)**2) + 
                  np.mean((z_g_model - z_data_g)**2) + 
-                 np.mean((z_c_model - z_data_c)**2) + 
-                 (np.mean((z_n_model - z_data_n)**2)))
-
+                 np.mean((z_c_model - z_data_c)**2) +
+                 np.mean((z_n_model - z_data_n)**2))
     return float(res_total)
 
-def model_adj(params): 
+def model_adj(params):
     return modelo_objetivo(params)
 
-result = differential_evolution(
-    model_adj, 
+result = result = differential_evolution(model_adj, 
     bounds, 
-    strategy = 'rand1bin', 
+    strategy = 'rand1bin', # Mais exploração, menos chance de travar
     popsize = 15, 
-    mutation = (0.5, 1.5),  
+    mutation = (0.5, 1.5),  # Aumenta a variabilidade
     recombination = 0.7, 
+    tol = 1e-4, 
     disp = True)
 
-
 # Salvando os melhores parâmetros em .npy
-path = r'C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\modelo_ajustado'
-np.save(path +r'\parametros_otimos.npy', result.x)
+np.save(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\params_otimos\parametros_otimos.npy', result.x)
