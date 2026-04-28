@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def modelo(t, y, p):
+def modelo(t, y, p): 
   #pi_v, k_v1, k_v2, k_v3, alfa_ap, beta_ap, c_ap1, c_ap2, delta_apm, beta_apm, beta_tke, alfa_th, beta_th, pi_th, delta_th, alfa_tk, beta_tk, pi_tk, delta_tk, alfa_b,
             #pi_b1, pi_b2, beta_ps, beta_pl, beta_bm, delta_ps, delta_pl, gamma_bm, pi_bm1, pi_bm2, pi_ps, pi_pl, delta_am, delta_ag, pi_c_apm, pi_c_i, pi_c_tke, delta_c, qn, Nmax, 
             #dn, gamma_iNK, pi_cNK, Ap0, Thn0, Tkn0, B0, NK0
@@ -12,7 +12,7 @@ def modelo(t, y, p):
   TkN0 = p['TkN0']
   B0   = p['B0']
   NK0  = p['NK0']
-
+ 
   dVdt   = p['pi_v']*V - p['kv1']*V*IgG - p['kv1']*V*IgM - p['kv2']*V*TkE - p['kv3']*V*ApM 
   dApdt  = p['alpha_ap']*(C + 1.0)*(Ap0 - Ap) - p['beta_ap']*Ap*((p['cap1']*V)/(p['cap2'] + V))
   dApMdt = p['beta_ap']*Ap*((p['cap1']*V)/(p['cap2'] + V)) - p['beta_apm']*ApM*V - p['gamma_apm']*ApM 
@@ -35,13 +35,16 @@ def modelo(t, y, p):
 
 # Extraindo os dados experimentais
 def carrega_dados():
-    data_nk = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\NK_covid_severo.csv', sep = ',')
+    data_nk = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\NK\NK_severo.csv', sep = ',')
     data_viremia = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\Viral_load.csv', sep = ',')
-    data_igm = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgM_data.csv', sep = ',')
-    data_igg = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgG_data.csv', sep = ',')
+    data_igm = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\IgM\IgM_severo.csv', sep = ',')
+    data_igg = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\IgG\IgG_severo.csv', sep = ',')
     data_il6 = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\dataset_il6_survivor.csv', sep = ',')
+    data_tcd4 = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\TCD4\TCD4_severo.csv', sep = ',')
+    data_tcd8 = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\TCD8\TCD8_severo.csv', sep = ',')
+    data_cellB = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\Células B\cellB_severo.csv', sep = ',')
 
-    return data_nk, data_viremia, data_igm, data_igg, data_il6
+    return data_nk, data_viremia, data_igm, data_igg, data_il6, data_tcd4, data_tcd8, data_cellB
 
 pars = {}
 

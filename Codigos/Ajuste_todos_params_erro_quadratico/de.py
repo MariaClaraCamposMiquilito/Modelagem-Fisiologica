@@ -13,7 +13,6 @@ data_n = (nk['x'].values, nk['y'].values)
 
 # Retirando as condições iniciais fixas do dicionário, para elas não serem ajustadas
 keys_pars = [k for k in pars.keys() if k not in ['Ap0', 'ThN0', 'TkN0', 'B0', 'NK0']]
-values_pars = list(pars.values())
 
 # Espaço de busca
 bounds = []

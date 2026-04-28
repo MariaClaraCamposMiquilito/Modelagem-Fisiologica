@@ -1,5 +1,23 @@
-# GRÁFICOS
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.integrate import solve_ivp
+from covid19_model_reis_2021 import modelo, y0, pars, params_ajs, carrega_dados
 
+# Carregando parâmetros ótimos
+params_otimos = np.load(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\params_otimos\parametros_otimos_2026_04_03.npy")
+
+p = pars.copy()
+for i, key in enumerate(params_ajs):
+    p[key] = params_otimos[i]
+    
+nk, viremia, igm, igg, il6 = carrega_dados()
+
+# Rodando o modelo com os parâmetros ótimos
+t = np.linspace(0, 37, 3500)
+sol = solve_ivp(modelo, [0, 37], y0, args=(p,), method = 'Radau', t_eval = t)
+
+# GRÁFICOS
 ## Viremia
 plt.plot(sol.t, np.log10(sol.y[0] + 1), color='red')
 plt.title("Vírus")
@@ -9,7 +27,7 @@ plt.grid()
 
 dataset_viremia = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\Viral_load.csv", sep = ',')
 
-x = dataset_viremia[dataset_viremia.type == 'mean']['x'] + 5
+x = dataset_viremia[dataset_viremia.type == 'mean']['x']
 y = np.log10(dataset_viremia[dataset_viremia.type == 'mean']['y'] + 1)
 
 dataset_viremia_up = np.log10(dataset_viremia[dataset_viremia.type == 'up']['y'] + 1)
@@ -83,7 +101,7 @@ dataset_IgM_down = np.log2(dataset_IgM[dataset_IgM.type == 'down']['y'] + 1)
 dataset_IgM_mean = np.log2(dataset_IgM[dataset_IgM.type == 'mean']['y'] + 1)
 
 y_error = [dataset_IgM_mean.to_numpy() - dataset_IgM_down.to_numpy(), dataset_IgM_up.to_numpy() - dataset_IgM_mean.to_numpy()]
-
+4
 plt.errorbar(x,y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='orange', capsize=4, elinewidth=1)
 
 plt.show()
