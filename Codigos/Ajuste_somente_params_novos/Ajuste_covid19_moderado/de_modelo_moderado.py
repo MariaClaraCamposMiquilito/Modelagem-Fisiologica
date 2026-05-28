@@ -65,79 +65,39 @@ z_tcd4 = (tcd4_log - tcd4_media)/tcd4_dv
 z_tcd8 = (tcd8_log - tcd8_media)/tcd8_dv
 z_cellB = (cellB_log - cellB_media)/cellB_dv
 
-
-pars['pi_capm'] = 3.28 * 10**(2)
-pars['pi_ci'] = 6.44 * 10**(-3)
-pars['pi_ctke'] = 1.78 * 10**(-2)
-
 bounds = [
-    [1.0, 100],         # pi_v
-    [1e-7, 1e-6],      # kv1
-    [1e-7, 1e-6],      # kv2
-    [0.0001, 0.001],       # beta_ap
-    [0.001, 0.5],      # gamma_apm
-    [1e0, 1e1],      # beta_th
-    [1e-4, 1e-3],      # pi_th
-    [0.1, 1.0],        # delta_th
-    [1e2, 1e3],        # alpha_tk
-    [1e-7, 1e-3],      # beta_tk
-    [1e-9, 1e-3],      # pi_tk
-    [0.01, 0.5],       # delta_tk
-    [1e-6, 1e-5],      # pi_pl
-    [3e1, 3e2],        # pi_capm
-    [6e-3, 6e-2],      # pi_ci
-    [1e-2, 1e-1],      # pi_ctke
-    [7e3, 7e4],       # gama_c
-    [0.01, 1.0],       # qn
-    [0.001, 0.05],     # dn
-    [1e-5, 0.1],       # gamma_iNK
-    [1e1, 1e2],      # pi_cNK
-    [10, 1e8],         # V0
-    [1e5, 1.5e8],      # NK0
-    [1.5e7, 3.5e8]     # Nmax
+    [1.0, 3.0],          # 0 pi_v
+    [0.4, 2],            # 1 beta_ap
+    [2.5, 15],           # 2 cap1
+    [4e6, 9e6],          # 3 cap2
+    [0.01, 0.1],         # 4 beta_apm
+    [0.045, 0.135],      # 5 beta_th
+    [0.00075, 0.0225],   # 6 delta_th
+    [0.00005, 0.00015],  # 7 beta_tk
+    [9e-7, 9.1e-7],      # 8 beta_pl
+    [4.5e-7, 5e-7],      # 9 beta_ps
+    [1.1, 7.0],          # 10 delta_ps
+    [10, 20],            # 11 delta_pl
+    [0.0045, 0.0135],    # 12 pi_ps
+    [1e-5, 3.5e-5],      # 13 pi_pl
+    [1e-3, 1e-2],        # 14 delta_am
+    [100.0, 2000.0],     # 15 gama_c
+    [1e4, 8e4],          # 16 V0
+    [4e5, 6e5],          # 17 Ap0
+    [1e4, 5e4],          # 18 B0
+    [1.5e5, 2.5e5]       # Nmax
 ]
 
 """
-# Espaço de busca params_ajs
-bounds = [
-    [1.0, 10],         # pi_v
-    [1e-6, 1e-2],       # kv1
-    [1e-6, 1e-2],       # kv2
-    [0.01, 1.0],        # beta_ap
-    [0.001, 0.5],    # gamma_apm
-    [1e-7, 1e-5], #beta_tke
-    [1e2, 1e5], # alpha_th
-    [1e-7, 1e-3],           # beta_th
-    [1e-9, 1e-3],           # pi_th
-    [0.1, 1.0],       # delta_th
-    [1e2, 1e5],       # alpha_tk
-    [1e-7, 1e-3],     # beta_tk
-    [1e-9, 1e-3],       # pi_tk
-    [0.01, 0.5],     # delta_tk
-    [1e-7, 1e-5], #beta_bm
-    [1e-4, 1e-3], #delta_bm
-    [1e-5, 1e-3],          # pi_pl
-    [1e-6, 1e-2], #pi_camp
-    [1e-6, 1e-2], #pi_ci
-    [1e-6, 1e-2], #pi_ctke
-    [1e-3, 1e-2], #gama_c
-    [0.01, 1.0],       # qn
-    [0.001, 0.05],        # dn
-    [1e-5, 0.1],     # gamma_iNK
-    [1e-7, 1e-5],     # pi_cNK
-    [10, 1e8],         # V0
-    [1e5, 1.5e8],     # NK0
-    [1.5e7, 3.5e8]      # Nmax
-]
-bounds = []
+bounds = [] 
 
 for i in params_ajs:
     val = pars[i]
-    bounds.append((val*0.1, val*10))
+    bounds.append((val*0.1, val*1.1))
 """
 # Tempo de simulação
 t0 = 0.0
-tf = 39.0
+tf = 40.0
 t = np.arange(t0, tf, 0.1)
 t_span = (t0, tf)
 
@@ -148,8 +108,11 @@ def model_objetivo(params):
         p[key] = params[i]
         
     try:
-        sol = solve_ivp(modelo, t_span, y0, args = (p,), method='Radau', t_eval = t)
+        y0_local = y0.copy()
+        y0_local[0] = p['V0']
+        y0_local[15] = p['NK0']
 
+        sol = solve_ivp(modelo, t_span, y0_local, args=(p,), method='Radau', t_eval=t)
         if not sol.success or np.any(np.isnan(sol.y)) or np.any(np.isinf(sol.y)):
             return 1e18
             
@@ -164,7 +127,7 @@ def model_objetivo(params):
     il6_interp = np.interp(il6[0], t, sol.y[14])
     tcd4_interp = np.interp(tcd4[0], t, sol.y[5])
     tcd8_interp = np.interp(tcd8[0], t, sol.y[7])
-    cellB_interp = np.interp(cellB[0], t, sol.y[8])
+    cellB_interp = np.interp(cellB[0], t, (sol.y[8]) + sol.y[11])
 
     # Evitando valores negativos no modelo
     nk_interp = np.clip(nk_interp, 1e-12, None)
@@ -208,10 +171,8 @@ def model_objetivo(params):
     res_tcd8 = z_m_tcd8 - z_tcd8
     res_cellB = z_m_cellB - z_cellB
 
-
-    return float((np.mean(res_nk**2)) + (np.mean(res_viremia**2)) + (np.mean(res_igm**2)) + 
-                 (np.mean(res_igg**2)) + (np.mean(res_il6**2)) + (np.mean(res_tcd4**2)) + 
-                 (np.mean(res_tcd8**2)) + (np.mean(res_cellB**2)))
+    return float(np.mean(res_viremia**2) + np.mean(res_nk**2) + np.mean(res_igm**2) + np.mean(res_igg**2) + 
+                 np.mean(res_il6**2) + np.mean(res_tcd4**2) + np.mean(res_tcd8**2) + np.mean(res_cellB**2))
 
 
 def model_adj(params): 
@@ -223,10 +184,10 @@ if __name__ == '__main__':
         model_adj, 
         bounds, 
         strategy = 'best1bin',
-        popsize = 20,
+        popsize = 50,
         mutation = (0.5, 1),
         recombination = 0.7,
-        disp = True
+        disp = True,
         workers = -1) # Usar todos os núcleos de processamento
 
     # Salvando os resultados em um .npy
