@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from modelo_covid import modelo, carrega_dados, pars, y0
 import matplotlib.pyplot as plt
-import pandas as pd
+import pandas as pd 
 
 array_otimo = np.load(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\params_otimos\parametros_otimos_erro_quadratico.npy')
  

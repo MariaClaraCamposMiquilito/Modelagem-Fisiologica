@@ -1,7 +1,7 @@
 import pandas as pd
 
 def modelo(t,y,p):
- 
+  
     V   = y[0]
     Ap  = y[1]
     ApM = y[2]
@@ -50,10 +50,10 @@ def modelo(t,y,p):
  
 # Todos os dados extraídos não tem log
 def carrega_dados():
-    dataset_viremia = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\Viral_load.csv", sep = ',')
-    dataset_il6 = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\dataset_il6_survivor.csv", sep = ',')
-    dataset_IgG = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgG_data.csv", sep = ',')
-    dataset_IgM = pd.read_csv(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\IgM_data.csv",sep = ',')
+    dataset_viremia = pd.read_csv(r"https://raw.githubusercontent.com/ruyfreis/covid19_model/refs/heads/main/data/Viral_load.csv", sep = ',')
+    dataset_il6 = pd.read_csv(r"https://raw.githubusercontent.com/ruyfreis/covid19_model/refs/heads/main/data/dataset_il6_survivor.csv", sep = ',')
+    dataset_IgG = pd.read_csv(r"https://raw.githubusercontent.com/ruyfreis/covid19_model/refs/heads/main/data/IgG_data.csv", sep = ',')
+    dataset_IgM = pd.read_csv(r"https://raw.githubusercontent.com/ruyfreis/covid19_model/refs/heads/main/data/IgM_data.csv",sep = ',')
     dataset_NK = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\meus_dados\NK_covid_severo copy.csv', sep = ',')
     return dataset_viremia, dataset_il6, dataset_IgG, dataset_IgM, dataset_NK
 

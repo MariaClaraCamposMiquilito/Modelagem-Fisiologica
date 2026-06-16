@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import differential_evolution
 from modelo_covid import modelo, carrega_dados, pars, y0
-
+ 
 # Arrumando os dados experimentais -> pega o x e o y dos datasets referente às médias
 viremia, il6, igg, igm, nk = carrega_dados()
 data_v = (viremia[viremia.type == 'mean']['x'].values, viremia[viremia.type == 'mean']['y'].values)
