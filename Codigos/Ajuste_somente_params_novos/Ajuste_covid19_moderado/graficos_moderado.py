@@ -1,18 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
-from covid19_modelo_moderado import modelo, y0, pars, params_ajs, carrega_dados
+from covid19_modelo_moderado import modelo, modelo_antigo, y0, pars, params_ajs, carrega_dados
 
 dataset_nk, dataset_viremia, dataset_igm, dataset_igg, dataset_il6, dataset_tcd4, dataset_tcd8, dataset_b = carrega_dados()
 
+dataset_viremia['x'] = dataset_viremia['x'] + 4.15
+
 # Carregando parâmetros ótimos
 params_otimos = np.load(r"C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\params_otimos\parametros_otimos.npy")
-
-#params_otimos[3] = 6e
-#params_otimos[3] = 1e5 
-#params_otimos[1] = 0.9
-#params_otimos[4] = 0.07
-#params_otimos[17] = 4e5
 
 p = pars.copy()
 for i, key in enumerate(params_ajs):
@@ -22,18 +18,15 @@ for i, key in enumerate(params_ajs):
 t = np.linspace(0, 40, 3500)
 
 y0_local = y0.copy()
-y0_local[0]  = p['V0']
-y0_local[1]  = p['Ap0']
-y0_local[8]  = p['B0']
-y0_local[15] = p['NK0']
 
-sol = solve_ivp(modelo, [0, 40], y0_local, args=(p,), method='Radau', t_eval=t)
+
+sol = solve_ivp(modelo_antigo, [0, 40], y0, args=(pars,), method='Radau', t_eval=t)
 
 # GRÁFICOS
 fig, ax = plt.subplots(2, 4, figsize = (22, 12))
 
 ## Viremia
-ax[0, 0].plot(sol.t + 4.15, np.log10(sol.y[0] + 1), color='red')
+ax[0, 0].plot(sol.t, np.log10(sol.y[0] + 1), color='red')
 ax[0, 0].set_title("Viremia")
 ax[0, 0].set_xlabel("t (dias)")
 ax[0, 0].set_ylabel("$log_{10} (cópias/ml + 1)$")
@@ -49,11 +42,11 @@ dataset_viremia_mean = np.log10(dataset_viremia[dataset_viremia.type == 'mean'][
 
 y_error = [dataset_viremia_mean.to_numpy() - dataset_viremia_down.to_numpy(), dataset_viremia_up.to_numpy() - dataset_viremia_mean.to_numpy()]
 
-ax[0, 0].errorbar(x + 4.15,y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='red', capsize=4, elinewidth=1)
+ax[0, 0].errorbar(x ,y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='red', capsize=4, elinewidth=1)
 
 
 ## Citocinas
-ax[0, 1].plot(sol.t + 4.15, sol.y[14], color='blue')
+ax[0, 1].plot(sol.t + 4.15, np.log10(sol.y[14] + 1), color='blue')
 ax[0, 1].set_title("Citocinas")
 ax[0, 1].set_xlabel("t (dias)")
 ax[0, 1].set_ylabel("$log_{10} (pg/ml)$")
@@ -113,7 +106,7 @@ ax[0, 3].errorbar(x + 4.15,y, yerr = y_error, linestyle='None', label='Data', fm
 
 
 ## Natural Killers
-
+"""
 ax[1, 0].grid()
 ax[1, 0].plot(sol.t + 4.15, np.log10(sol.y[15] + 1), color = 'pink')
 ax[1, 0].set_title("Células Natural Killers")
@@ -130,12 +123,12 @@ dataset_nk_mean = np.log10(dataset_nk[dataset_nk.type == 'mean']['y'] + 1)
 y_error = [dataset_nk_mean.to_numpy() - dataset_nk_down.to_numpy(), dataset_nk_up.to_numpy() - dataset_nk_mean.to_numpy()]
 
 ax[1, 0].errorbar(x + 4.15,y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='pink', capsize=4, elinewidth=1)
-
+"""
 
 ## Células TCD4+
 
 ax[1, 1].grid()
-ax[1, 1].plot(sol.t + 4.15, np.log10(sol.y[5] + 1), color = 'red')
+ax[1, 1].plot(sol.t + 4.15, np.log10((sol.y[5]) + 1), color = 'red')
 ax[1, 1].set_title("Células T Helpers")
 ax[1, 1].set_xlabel("t (dias)")
 ax[1, 1].set_ylabel("$log_{10} (10³/ml)$")
@@ -155,12 +148,12 @@ ax[1, 1].errorbar(x + 4.15,y, yerr = y_error, linestyle='None', label='Data', fm
 ## Células TCD8+
 
 ax[1, 2].grid()
-ax[1, 2].plot(sol.t + 4.15, np.log10(sol.y[7] + 1), color = 'orange')
+ax[1, 2].plot(sol.t + 4.15, np.log10((sol.y[7]) + 1), color = 'orange')
 ax[1, 2].set_title("Células T Killers")
 ax[1, 2].set_xlabel("t (dias)")
 ax[1, 2].set_ylabel("$log_{10} (10³/ml)$")
 
-x = dataset_tcd8[dataset_tcd8.type == 'mean']['x']
+x = dataset_tcd8[dataset_tcd8.type == 'mean']['x'] 
 y = np.log10(dataset_tcd8[dataset_tcd8.type == 'mean']['y'] + 1)
 
 dataset_tcd8_up = np.log10(dataset_tcd8[dataset_tcd8.type == 'up']['y'] + 1)
@@ -175,7 +168,7 @@ ax[1, 2].errorbar(x + 4.15,y, yerr = y_error, linestyle='None', label='Data', fm
 ## Células B
 
 ax[1, 3].grid()
-ax[1, 3].plot(sol.t + 4.15, np.log10(sol.y[8] + sol.y[11] + 1), color = 'green')
+ax[1, 3].plot(sol.t + 4.15, np.log10(sol.y[8] + sol.y[11]  + 1), color = 'green')
 ax[1, 3].set_title("Células B")
 ax[1, 3].set_xlabel("t (dias)")
 ax[1, 3].set_ylabel("$log_{10} (10³/ml)$")
@@ -191,8 +184,4 @@ y_error = [dataset_B_mean.to_numpy() - dataset_B_down.to_numpy(), dataset_B_up.t
 
 ax[1, 3].errorbar(x + 4.15,y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='green', capsize=4, elinewidth=1)
 
-plt.show()
-
-
-plt.plot(sol.t, np.log10(sol.y[2]), label = "APCs")
 plt.show()

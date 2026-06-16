@@ -17,7 +17,6 @@ tcd4    = (tcd4[tcd4.type == 'mean']['x'].values, tcd4[tcd4.type == 'mean']['y']
 tcd8    = (tcd8[tcd8.type == 'mean']['x'].values, tcd8[tcd8.type == 'mean']['y'].values)
 cellB   = (cellB[cellB.type == 'mean']['x'].values, cellB[cellB.type == 'mean']['y'].values)
 
-
 # Transformação Logarítimica
 e = 1.0
 
@@ -65,36 +64,50 @@ z_tcd4 = (tcd4_log - tcd4_media)/tcd4_dv
 z_tcd8 = (tcd8_log - tcd8_media)/tcd8_dv
 z_cellB = (cellB_log - cellB_media)/cellB_dv
 
+
 bounds = [
-    [1.0, 3.0],          # 0 pi_v
-    [0.4, 2],            # 1 beta_ap
-    [2.5, 15],           # 2 cap1
-    [4e6, 9e6],          # 3 cap2
-    [0.01, 0.1],         # 4 beta_apm
-    [0.045, 0.135],      # 5 beta_th
-    [0.00075, 0.0225],   # 6 delta_th
-    [0.00005, 0.00015],  # 7 beta_tk
-    [9e-7, 9.1e-7],      # 8 beta_pl
-    [4.5e-7, 5e-7],      # 9 beta_ps
-    [1.1, 7.0],          # 10 delta_ps
-    [10, 20],            # 11 delta_pl
-    [0.0045, 0.0135],    # 12 pi_ps
-    [1e-5, 3.5e-5],      # 13 pi_pl
-    [1e-3, 1e-2],        # 14 delta_am
-    [100.0, 2000.0],     # 15 gama_c
-    [1e4, 8e4],          # 16 V0
-    [4e5, 6e5],          # 17 Ap0
-    [1e4, 5e4],          # 18 B0
-    [1.5e5, 2.5e5]       # Nmax
+    [0.5, 3.0],         # 0 pi_v
+    [0.001, 0.2],      # 1 beta_ap
+    [5.0, 30.0],        # 2 cap1
+    [8e7, 9e9],         # 3 cap2
+    [0.002, 0.1],      # 4 beta_apm
+    [1.8e-6, 5e-5],     # 5 beta_th
+    [0.01, 0.5],    # beta_tk
+    [700, 1500],        # 6 gama_c
+    [6.5e5, 9.5e6],     # 7 Ap0
+    [1.45e5, 3e6],   # 8 NK0
+    [2.5e5, 5e6]      # 9 Nmax
 ]
 
+
 """
+bounds = [
+    [1.60, 1.85],        # 0 pi_v
+    [0.24, 0.35],        # 1 kv3
+    [0.16, 0.24],        # 2 beta_ap
+    [1.00, 1.60],        # 3 cap1
+    [8e6, 2e7],          # 4 cap2
+    [0.004, 0.007],      # 5 beta_apm
+    [1.8e-5, 5e-5],      # 6 beta_th
+    [4e-4, 8e-4],        # 7 beta_tk
+    [2e-8, 1.0e-7],      # 8 beta_ps
+    [5e-8, 1.2e-7],      # 9 beta_pl
+    [3.0, 10.0],         # delta_ps
+    [1.0, 2.0],          # delta_pl
+    [0.08, 0.20],        # 10 delta_am
+    [700, 1500],         # 11 gama_c
+    [6.5e5, 8.0e5],      # 13 Ap0
+    [1.45e5, 1.75e5],    # 14 NK0
+    [2.5e5, 5.0e5]       # 15 Nmax
+]
+
 bounds = [] 
 
 for i in params_ajs:
     val = pars[i]
-    bounds.append((val*0.1, val*1.1))
+    bounds.append((val*0.01, val*10))
 """
+
 # Tempo de simulação
 t0 = 0.0
 tf = 40.0
@@ -145,10 +158,9 @@ def model_objetivo(params):
     igm_interp = np.log10(igm_interp + e)
     igg_interp = np.log10(igg_interp + e)
     il6_interp = np.log10(il6_interp + e)
-    tcd4_interp = np.log10(tcd4_interp + e)
-    tcd8_interp = np.log10(tcd8_interp + e)
-    cellB_interp = np.log10(cellB_interp + e)
-
+    tcd4_interp  = np.log10(tcd4_interp * 1e3 + e)
+    tcd8_interp  = np.log10(tcd8_interp * 1e3 + e)
+    cellB_interp = np.log10(cellB_interp * 1e3 + e)
     
     # Z-score
     z_m_nk = (nk_interp - nk_media) / nk_dv
@@ -161,7 +173,7 @@ def model_objetivo(params):
     z_m_cellB = (cellB_interp - cellB_media) / cellB_dv
 
 
-    # Erro total
+    # Erro total 
     res_nk = z_m_nk - z_nk
     res_viremia = z_m_viremia - z_viremia
     res_igm = z_m_igm - z_igm
@@ -173,22 +185,23 @@ def model_objetivo(params):
 
     return float(np.mean(res_viremia**2) + np.mean(res_nk**2) + np.mean(res_igm**2) + np.mean(res_igg**2) + 
                  np.mean(res_il6**2) + np.mean(res_tcd4**2) + np.mean(res_tcd8**2) + np.mean(res_cellB**2))
-
+    
 
 def model_adj(params): 
     return model_objetivo(params)
 
 if __name__ == '__main__':
+    
     # Evolução Diferencial
     result = differential_evolution(
         model_adj, 
         bounds, 
         strategy = 'best1bin',
-        popsize = 50,
+        popsize = 70,
         mutation = (0.5, 1),
         recombination = 0.7,
         disp = True,
-        workers = -1) # Usar todos os núcleos de processamento
+        workers = 10) # Usar todos os núcleos de processamento
 
     # Salvando os resultados em um .npy
     np.save(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\params_otimos\parametros_otimos.npy', result.x)
