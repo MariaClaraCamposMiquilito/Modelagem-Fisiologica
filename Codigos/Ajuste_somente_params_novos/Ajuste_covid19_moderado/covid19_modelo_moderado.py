@@ -75,10 +75,10 @@ def modelo_antigo(t, y, p):
 # Extraindo os dados experimentais
 def carrega_dados():  
     data_nk = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/NK_covid_moderado.csv', sep = ',')
-    data_viremia = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\Viral_load.csv', sep = ',')
+    data_viremia = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/viremia_covid.csv', sep = ',')
     data_igm = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/IgM_covid_moderado.csv', sep = ',')
     data_igg = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/IgG_covid_moderado.csv', sep = ',')
-    data_il6 = pd.read_csv(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\covid19_model\data\dataset_il6_survivor.csv', sep = ',')
+    data_il6 = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/citocinas_covid.csv', sep = ',')
     data_tcd4 = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/TCD4_covid_moderado.csv', sep = ',')
     data_tcd8 = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/TCD8_covid_moderado.csv', sep = ',')
     data_cellB = pd.read_csv(r'https://raw.githubusercontent.com/MariaClaraCamposMiquilito/Modelagem-Fisiologica/refs/heads/main/Database/cellB_covid_moderado.csv', sep = ',')
