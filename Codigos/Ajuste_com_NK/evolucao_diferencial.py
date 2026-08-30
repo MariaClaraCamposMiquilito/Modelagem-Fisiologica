@@ -1,139 +1,163 @@
 import numpy as np
+import pandas as pd
 from scipy.integrate import solve_ivp
 from scipy.optimize import differential_evolution
-from modelo_covid import modelo, carrega_dados, pars, y0
- 
-# Arrumando os dados experimentais -> pega o x e o y dos datasets referente às médias
-viremia, il6, igg, igm, nk = carrega_dados()
-data_v = (viremia[viremia.type == 'mean']['x'].values, viremia[viremia.type == 'mean']['y'].values)
-data_c = (il6[il6.type == 'mean']['x'].values, il6[il6.type == 'mean']['y'].values)
-data_g = (igg[igg.type == 'mean']['x'].values, igg[igg.type == 'mean']['y'].values)
-data_m = (igm[igm.type == 'mean']['x'].values, igm[igm.type == 'mean']['y'].values)
-data_n = (nk['x'].values, nk['y'].values)
+from covid19_model_reis_2021 import modelo, pars, params_ajs, carrega_dados, monta_y0
 
-# Retirando as condições iniciais fixas do dicionário, para elas não serem ajustadas
-keys_pars = [k for k in pars.keys() if k not in ['Ap0', 'ThN0', 'TkN0', 'B0', 'NK0']]
+nk, viremia, igm, igg, il6 = carrega_dados()
 
-# Espaço de busca
+nk      = (nk['x'].values, nk['y'].values)
+viremia = (viremia[viremia.type == 'mean']['x'].values, viremia[viremia.type == 'mean']['y'].values)
+igm     = (igm[igm.type == 'mean']['x'].values, igm[igm.type == 'mean']['y'].values)
+igg     = (igg[igg.type == 'mean']['x'].values, igg[igg.type == 'mean']['y'].values)
+il6     = (il6[il6.type == 'mean']['x'].values, il6[il6.type == 'mean']['y'].values)
+
+nk['y'] = nk['y'] / 1000
+# Transformação Logarítimica
+e = 1.0
+
+nk_log = np.log10(nk[1] + e)
+viremia_log = np.log10(viremia[1] + e)
+igm_log = np.log10(igm[1] + e)
+igg_log = np.log10(igg[1] + e)
+il6_log = np.log10(il6[1] + e)
+
+# Normalização - média e desvio-padrão
+nk_media = nk_log.mean()
+nk_dv = nk_log.std(ddof=1)
+
+viremia_media = viremia_log.mean()
+viremia_dv = viremia_log.std(ddof = 1)
+
+igm_media = igm_log.mean()
+igm_dv = igm_log.std(ddof = 1)
+
+igg_media = igg_log.mean()
+igg_dv = igg_log.std(ddof = 1)
+
+il6_media = il6_log.mean()
+il6_dv = il6_log.std(ddof = 1)
+
+# Z-score
+z_nk = (nk_log - nk_media)/nk_dv
+z_viremia = (viremia_log - viremia_media)/viremia_dv
+z_igm = (igm_log - igm_media)/igm_dv
+z_igg = (igg_log - igg_media)/igg_dv
+z_il6 = (il6_log - il6_media)/il6_dv
+
+
+# Espaço de busca params_ajs
+bounds = [
+    [1.2, 1.6],         # pi_v
+    [0.01, 0.03],       # kv1
+    [1.4e-5, 1.6e-5],   # kv2
+    [0.01, 1e0],        # beta_ap
+    [0.0005, 0.065],    # gamma_apm
+    [1.4e-6, 1.5e-4],   # beta_th
+    [5e-9, 6e-7],       # pi_th
+    [0.27, 27e0],       # delta_th
+    [0.75, 70e0],       # alpha_tk
+    [0.00001, 0.0015],  # beta_tk
+    [9.6e-9, 9.6e-7],   # pi_tk
+    [0.0002, 0.04],     # delta_tk
+    [0.00008, 0.00009], # pi_pl
+    [0.004, 0.55],      # qn
+    [0.06, 7e0],        # dn
+    [0.0005, 0.06],     # gamma_iNK
+    [0.0008, 0.09],     # pi_cNK
+    [1e0, 1e6],         # V0
+    [1.3e4, 1.5e6],     # NK0
+    [1.5e5, 3.5e6]      # Nmax
+]
+"""
 bounds = []
-for k in keys_pars:
-    val = pars[k]
-    if val == 0:
-        bounds.append((0, 0.1))
-    else:
-        bounds.append(val * 0.1, val * 1.5 )
+
+for i in params_ajs:
+    val = pars[i]
+    bounds.append((val*0.1, val*10))"""
 
 # Tempo de simulação
-tf = 37.0 # dias
-dt = 0.01
-N = int(tf / dt)
-t = np.linspace(0, tf, N)
+t0 = 0.0
+tf = 37.0
+t = np.arange(t0, tf, 0.1)
+t_span = (t0, tf)
 
-# Estatística dos dados
-eps = 1.0
 
-## Transformando os dados em Log10
-data_v_log = np.log10(data_v[1] + eps)
-data_c_log = np.log10(data_c[1] + eps)
-data_g_log = np.log10(data_g[1] + eps)
-data_m_log = np.log10(data_m[1] + eps)
-data_n_log = np.log10(data_n[1] + eps)
-
-## Calculando Média
-media_v = data_v_log.mean()
-media_c = data_c_log.mean()
-media_g = data_g_log.mean()
-media_m = data_m_log.mean()
-media_n = data_n_log.mean()
-
-## Calculando desvio-padrão
-dv_v = data_v_log.std(ddof = 1)
-dv_c = data_c_log.std(ddof = 1)
-dv_g = data_g_log.std(ddof = 1)
-dv_m = data_m_log.std(ddof = 1)
-dv_n = data_n_log.std(ddof = 1)
-
-## Z_score dos dados
-z_data_v = (data_v_log - media_v) / dv_v
-z_data_c = (data_c_log - media_c) / dv_c
-z_data_g = (data_g_log - media_g) / dv_g
-z_data_m = (data_m_log - media_m) / dv_m
-z_data_n = (data_n_log - media_n) / dv_n
-
-# FUNÇÃO OBJETIVO
-def modelo_objetivo(params):
+# Função Objetivo
+def model_objetivo(params):
     p = pars.copy()
-    for i, key in enumerate(keys_pars):
+    for i, key in enumerate(params_ajs):
         p[key] = params[i]
+        
+    y0_atualizado = monta_y0(p)
+    sol = solve_ivp(modelo, t_span, y0_atualizado, args = (p,), method='Radau', t_eval = t)
 
-    sol = solve_ivp(
-        modelo, 
-        [0, tf], 
-        y0, 
-        args = (p,), 
-        method ='Radau', # Resolver EDOs rígidas
-        t_eval = t)
-
-    if not sol.success or sol.y.shape[1] < len(t) or np.any(np.isnan(sol.y)) or np.any(np.isinf(sol.y)):
-        return 1e18
-
-    # .shape[1] representa os pontos no tempo onde a solução foi calculada
-    # sol.y.shape[1] < len(t) -> verifica se o solver conseguiu chegar até o final do tempo no t_eval.
-    # np.any(np.isnan(sol.y)) -> verifica se tem o erro NaN
-    # np.any(np.isinf(sol.y)) -> verifica se o modelo explodiu -> os valores deram infinito
-
+    if not sol.success or np.any(np.isnan(sol.y)) or np.any(np.isinf(sol.y)):
+        return 1e18  # Retorna um erro muito alto para o otimizador descartar esses parâmetros
     # Interpolando os passos de tempo
-    # sol.y[índice] extrai a linha da variável no tempo simulado 't'
-    # data_x[0] são os dias onde temos dados experimentais
-    v_interp = np.interp(data_v[0], t, sol.y[0])
-    m_interp = np.interp(data_m[0], t, sol.y[12])
-    g_interp = np.interp(data_g[0], t, sol.y[13])
-    c_interp = np.interp(data_c[0], t, sol.y[14])
-    n_interp = np.interp(data_n[0], t, sol.y[15])
+    nk_interp = np.interp(nk[0], t, sol.y[15])
+    viremia_interp = np.interp(viremia[0], t, sol.y[0])
+    igm_interp = np.interp(igm[0], t, sol.y[12])
+    igg_interp = np.interp(igg[0], t, sol.y[13])
+    il6_interp = np.interp(il6[0], t, sol.y[14])
 
     # Evitando valores negativos no modelo
-    v_model = np.clip(v_interp, 1e-12, None)
-    m_model = np.clip(m_interp, 1e-12, None)
-    g_model = np.clip(g_interp, 1e-12, None)
-    c_model = np.clip(c_interp, 1e-12, None)
-    n_model = np.clip(n_interp, 1e-12, None)
+    nk_interp = np.clip(nk_interp, 1e-12, None)
+    viremia_interp = np.clip(viremia_interp, 1e-12, None)
+    igm_interp = np.clip(igm_interp, 1e-12, None)
+    igg_interp = np.clip(igg_interp, 1e-12, None)
+    il6_interp = np.clip(il6_interp, 1e-12, None)
 
-    # Aplicando Log no modelo
-    v_model_log = np.log10(v_model + eps)
-    m_model_log = np.log10(m_model + eps)
-    g_model_log = np.log10(g_model + eps)
-    c_model_log = np.log10(c_model + eps)
-    n_model_log = np.log10(n_model + eps)
+    nk_interp = np.log10(nk_interp + e)
+    viremia_interp = np.log10(viremia_interp + e)
+    igm_interp = np.log10(igm_interp + e)
+    igg_interp = np.log10(igg_interp + e)
+    il6_interp = np.log10(il6_interp + e)
+    
+    # Z-score
+    z_m_nk = (nk_interp - nk_media) / nk_dv
+    z_m_viremia = (viremia_interp - viremia_media) / viremia_dv
+    z_m_igm = (igm_interp - igm_media) / igm_dv
+    z_m_igg = (igg_interp - igg_media) / igg_dv
+    z_m_il6 = (il6_interp - il6_media) / il6_dv
 
-    # Z-score do modelo
-    z_v_model = (v_model_log - media_v) / dv_v
-    z_m_model = (m_model_log - media_m) / dv_m
-    z_g_model = (g_model_log - media_g) / dv_g
-    z_c_model = (c_model_log - media_c) / dv_c
-    z_n_model = (n_model_log - media_n) / dv_n
+    # Erro total
+    res_nk = z_m_nk - z_nk
+    res_viremia = z_m_viremia - z_viremia
+    res_igm = z_m_igm - z_igm
+    res_igg = z_m_igg - z_igg
+    res_il6 = z_m_il6 - z_il6
 
-    # Resíduos
-    res_total = (np.mean((z_v_model - z_data_v)**2) + 
-                 np.mean((z_m_model - z_data_m)**2) + 
-                 np.mean((z_g_model - z_data_g)**2) + 
-                 np.mean((z_c_model - z_data_c)**2) + 
-                 np.mean((z_n_model - z_data_n)**2))
-
-    return float(res_total)
-
-def model_adj(params):
-    return modelo_objetivo(params)
-
-result = differential_evolution(
-    model_adj, 
-    bounds, 
-    strategy = 'rand1bin', 
-    popsize = 10, 
-    mutation = (0.5, 1.5),  
-    recombination = 0.7, 
-    disp = True)
+    return float((np.mean(res_nk**2)) + (np.mean(res_viremia**2)) + (np.mean(res_igm**2)) + 
+                 (np.mean(res_igg**2)) + (np.mean(res_il6**2)))
 
 
-# Salvando os melhores parâmetros em .npy
-path = r'C:\Users\karla\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\modelo_ajustado'
-np.save(path +r'\parametros_otimos.npy', result.x)
+
+def model_adj(params): 
+    return model_objetivo(params)
+
+if __name__ == '__main__':
+    # Evolução Diferencial
+    result = differential_evolution(
+        model_adj, 
+        bounds, 
+        strategy = 'best1bin', 
+        popsize = 20, 
+        mutation = (0.5, 1),  
+        recombination = 0.7, 
+        disp = True,
+        workers = -1) # Usar todos os núcleos de processamento
+
+    # Salvando os resultados em um .npy
+    np.save(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\params_otimos\parametros_otimos.npy', result.x)
+
+
+
+
+
+
+
+
+
+
+

@@ -198,7 +198,7 @@ if __name__ == "__main__":
     pars['TkN0'] = TkN0
     pars['B0'] = B0
     pars['NK0'] = NK0  
-    pars['Nmax'] = 5.0e5 
+    pars['Nmax'] = 
 
     # Cria um vetor de estado inicial para ser passado para a função modelo
     y0 = [V0, Ap0, ApM0, I0, ThN0, 

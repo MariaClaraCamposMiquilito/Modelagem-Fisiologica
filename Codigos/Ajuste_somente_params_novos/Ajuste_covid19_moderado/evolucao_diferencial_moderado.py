@@ -4,7 +4,8 @@ from scipy.integrate import solve_ivp
 from scipy.optimize import differential_evolution
 from covid19_modelo_moderado import modelo, y0, pars, params_ajs, carrega_dados
 import warnings
-warnings.filterwarnings('ignore', category=RuntimeWarning)
+
+warnings.filterwarnings('ignore', category = RuntimeWarning)
 
 nk, viremia, igm, igg, il6, tcd4, tcd8, cellB = carrega_dados()
 
@@ -64,53 +65,57 @@ z_tcd4 = (tcd4_log - tcd4_media)/tcd4_dv
 z_tcd8 = (tcd8_log - tcd8_media)/tcd8_dv
 z_cellB = (cellB_log - cellB_media)/cellB_dv
 
-
 bounds = [
-    [0.5, 3.0],         # 0 pi_v
-    [0.001, 0.2],      # 1 beta_ap
-    [5.0, 30.0],        # 2 cap1
-    [8e7, 9e9],         # 3 cap2
-    [0.002, 0.1],      # 4 beta_apm
-    [1.8e-6, 5e-5],     # 5 beta_th
-    [0.01, 0.5],    # beta_tk
-    [700, 1500],        # 6 gama_c
-    [6.5e5, 9.5e6],     # 7 Ap0
-    [1.45e5, 3e6],   # 8 NK0
-    [2.5e5, 5e6]      # 9 Nmax
+    (0.8, 1.7),          # 0 pi_v
+    (0.001, 0.10),       # 1 kv3
+    (0.001, 0.5),        # 2 beta_ap
+    (0.001, 5.0),        # 3 cap1
+    (1e6, 6e7),          # 4 cap2
+    (0.1, 0.9),          # 5 beta_apm
+    (0.1, 0.9),          # 6 beta_th
+    (0.0005, 0.001),     # 7 delta_th
+    (3e-5, 2.5e-4),      # 8 beta_tk
+    (0.005, 0.01),       # 9 gamma_c
+    (0.50, 0.95),        # 10 dn
+    (0.05, 0.5),         # 11 pi_cNK
+    (1e6, 5e6),          # 12 Ap0
+    (3.5e5, 7e5),        # 13 TkN0
+    (1.2e5, 4e5),        # 14 B0
 ]
-
-
 """
-bounds = [
-    [1.60, 1.85],        # 0 pi_v
-    [0.24, 0.35],        # 1 kv3
-    [0.16, 0.24],        # 2 beta_ap
-    [1.00, 1.60],        # 3 cap1
-    [8e6, 2e7],          # 4 cap2
-    [0.004, 0.007],      # 5 beta_apm
-    [1.8e-5, 5e-5],      # 6 beta_th
-    [4e-4, 8e-4],        # 7 beta_tk
-    [2e-8, 1.0e-7],      # 8 beta_ps
-    [5e-8, 1.2e-7],      # 9 beta_pl
-    [3.0, 10.0],         # delta_ps
-    [1.0, 2.0],          # delta_pl
-    [0.08, 0.20],        # 10 delta_am
-    [700, 1500],         # 11 gama_c
-    [6.5e5, 8.0e5],      # 13 Ap0
-    [1.45e5, 1.75e5],    # 14 NK0
-    [2.5e5, 5.0e5]       # 15 Nmax
-]
 
-bounds = [] 
+bounds = [
+    (0.65, 1.20),        # 0 pi_v
+    (0.12, 0.30),        # 1 kv3
+    (0.015, 0.060),      # 2 beta_ap
+    (2.5, 6.0),          # 3 cap1
+    (7e6, 1.3e7),        # 4 cap2
+
+    (0.006, 0.018),      # 5 beta_apm
+
+    (5e-5, 8e-4),        # 6 beta_th
+    (0.015, 0.080),      # 7 delta_th
+
+    (3e-5, 2.5e-4),      # 8 beta_tk
+
+    (80.0, 500.0),       # 9 gamma_c
+    (0.50, 0.95),        # 10 dn
+    (0.003, 0.012),      # 11 pi_cNK
+
+    (7e5, 1.2e6),        # 12 Ap0
+    (3.5e5, 7e5),        # 13 TkN0
+    (1.2e5, 4e5),        # 14 B0
+]
+bounds = []
 
 for i in params_ajs:
-    val = pars[i]
-    bounds.append((val*0.01, val*10))
+    bounds.append((pars[i] * 0.1, pars[i] * 1.5))
+
 """
 
 # Tempo de simulação
 t0 = 0.0
-tf = 40.0
+tf = 70.0
 t = np.arange(t0, tf, 0.1)
 t_span = (t0, tf)
 
@@ -121,11 +126,8 @@ def model_objetivo(params):
         p[key] = params[i]
         
     try:
-        y0_local = y0.copy()
-        y0_local[0] = p['V0']
-        y0_local[15] = p['NK0']
 
-        sol = solve_ivp(modelo, t_span, y0_local, args=(p,), method='Radau', t_eval=t)
+        sol = solve_ivp(modelo, t_span, y0, args=(p,), method='Radau', t_eval=t)
         if not sol.success or np.any(np.isnan(sol.y)) or np.any(np.isinf(sol.y)):
             return 1e18
             
@@ -133,14 +135,14 @@ def model_objetivo(params):
         return 1e18
     
     # Interpolando os passos de tempo
-    nk_interp = np.interp(nk[0], t, sol.y[15])
-    viremia_interp = np.interp(viremia[0], t, sol.y[0])
-    igm_interp = np.interp(igm[0], t, sol.y[12])
-    igg_interp = np.interp(igg[0], t, sol.y[13])
-    il6_interp = np.interp(il6[0], t, sol.y[14])
-    tcd4_interp = np.interp(tcd4[0], t, sol.y[5])
-    tcd8_interp = np.interp(tcd8[0], t, sol.y[7])
-    cellB_interp = np.interp(cellB[0], t, (sol.y[8]) + sol.y[11])
+    nk_interp = np.interp(nk[0] + 4.15, t, sol.y[15])
+    viremia_interp = np.interp(viremia[0] + 4.15, t, sol.y[0])
+    igm_interp = np.interp(igm[0] + 4.15, t, sol.y[12])
+    igg_interp = np.interp(igg[0] + 4.15, t, sol.y[13])
+    il6_interp = np.interp(il6[0] + 4.15, t, sol.y[14])
+    tcd4_interp = np.interp(tcd4[0] + 4.15, t, sol.y[5])
+    tcd8_interp = np.interp(tcd8[0] + 4.15, t, sol.y[7])
+    cellB_interp = np.interp(cellB[0] + 4.15, t, (sol.y[8]) + sol.y[11])
 
     # Evitando valores negativos no modelo
     nk_interp = np.clip(nk_interp, 1e-12, None)
@@ -151,7 +153,6 @@ def model_objetivo(params):
     tcd4_interp = np.clip(tcd4_interp, 1e-12, None)
     tcd8_interp = np.clip(tcd8_interp, 1e-12, None)
     cellB_interp = np.clip(cellB_interp, 1e-12, None)
-
 
     nk_interp = np.log10(nk_interp + e)
     viremia_interp = np.log10(viremia_interp + e)
@@ -183,9 +184,11 @@ def model_objetivo(params):
     res_tcd8 = z_m_tcd8 - z_tcd8
     res_cellB = z_m_cellB - z_cellB
 
-    return float(np.mean(res_viremia**2) + np.mean(res_nk**2) + np.mean(res_igm**2) + np.mean(res_igg**2) + 
-                 np.mean(res_il6**2) + np.mean(res_tcd4**2) + np.mean(res_tcd8**2) + np.mean(res_cellB**2))
-    
+
+    #return float(np.mean(res_viremia**2) + np.mean(res_nk**2) + np.mean(res_igm**2) + np.mean(res_igg**2) + 
+     #            np.mean(res_il6**2) + np.mean(res_tcd4**2) + np.mean(res_tcd8**2) + np.mean(res_cellB**2))
+    return float(np.mean(res_tcd4**2))
+
 
 def model_adj(params): 
     return model_objetivo(params)
@@ -205,7 +208,6 @@ if __name__ == '__main__':
 
     # Salvando os resultados em um .npy
     np.save(r'C:\Users\mique\OneDrive\Documentos\UFJF\Modelagem Fisiologica\Codigos\params_otimos\parametros_otimos.npy', result.x)
-
 
 
 
