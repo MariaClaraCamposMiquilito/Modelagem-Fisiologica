@@ -39,19 +39,76 @@ void *cvode_mem_global = NULL;
 // ============================
 // Condições iniciais
 // ============================
-real V0 = 61.0, Ap0 = 1.0e6, ApM0 = 0.0, I0 = 0.0, ThN0 = 1.0e6, ThE0 = 0.0, TkN0 = 5.0e5, TkE0 = 0.0, B0 = 2.5e5, Ps0 = 0.0,
-    Pl0 = 0.0, Bm0 = 0.0, IgM0 = 0.0, IgG0 = 0.0, C0 = 0.0, NK0 = 1.3e5;
-     
+real V0   = 61.0, 
+     Ap0  = 1e6,
+     ApM0 = 0.0,
+     I0   = 0.0,
+     ThN0 = 1e6,
+     ThE0 = 0.0,
+     TkN0 = 5.0e5,
+     TkE0 = 0.0,
+     B0   = 2.5e5,
+     Ps0  = 0.0,
+     Pl0  = 0.0,
+     Bm0  = 0.0,
+     IgM0 = 0.0,
+     IgG0 = 0.0,
+     C0   = 0.0,
+     NK0  = 1.3e5;
 // ============================
 // Parâmetros
 // ============================
-real pi_v = 1.47, kv1 = 9.82e-3, kv2 = 6.10e-5, kv3 = 6.45e-2, alpha_ap = 1.0, beta_ap = 1.79e-1, cap1 = 8.0, cap2 = 8.08e6, 
+/*real pi_v = 1.47, kv1 = 9.82e-3, kv2 = 6.10e-5, kv3 = 6.45e-2, alpha_ap = 1.0, beta_ap = 1.79e-1, cap1 = 8.0, cap2 = 8.08e6, 
     gamma_apm = 4.0e-2, beta_apm = 1.33e-2, beta_tke= 3.5e-6, alpha_th = 2.17e-4, beta_th = 1.8e-5, pi_th = 1.0e-8, delta_th = 3.0e-1,
     alpha_tk = 1.0, beta_tk = 1.43e-5, pi_tk = 1.0e-8, delta_tk = 3.0e-2, alpha_b = 3.578236584, pi_b1 = 8.98e-5, pi_b2 = 1.27e-8,
     beta_ps = 6.0e-6, beta_pl = 5.0e-6, beta_bm = 1.0e-6, delta_ps = 2.5, delta_pl = 3.5e-1, delta_bm = 9.75e-4, pi_bm1  = 1.0e-5,
     pi_bm2 = 2.5e3, pi_ps = 8.7e-2, pi_pl = 1.0e-3, delta_am = 7.0e-2, delta_ag = 7.0e-2, pi_capm = 3.28e2, pi_ci   = 6.44e-3,
-    pi_ctke = 1.78e-2, gamma_c  = 7.04e2, qn = 0.52, dn = 0.07, gamma_ink =  0.000574, gamma_itk = 0.001, pi_cnk = 0.01, Nmax =  3e6;
-
+    pi_ctke = 1.78e-2, gamma_c  = 7.04e2, qn = 0.52, dn = 0.07, gamma_ink =  0.000574, pi_cnk = 0.01, Nmax =  3e6;
+*/
+real pi_v = 1.47e0,
+     kv1 = 9.82e-3,
+     kv2 = 6.10e-5,
+     kv3 = 6.45e-2,
+     alpha_ap = 1.0e0,
+     beta_ap = 1.79e-1,
+     cap1 = 8.0e0,
+     cap2 = 8.08e6,
+     gamma_apm = 4.0e-2,
+     beta_apm = 1.33e-2,
+     beta_tke = 3.5e-6,
+     alpha_th = 2.17e-4,
+     beta_th = 1.8e-5,
+     pi_th = 1.0e-8,
+     delta_th = 3.0e-1,
+     alpha_tk = 1.0e0,
+     beta_tk = 1.43e-5,
+     pi_tk = 1.0e-8,
+     delta_tk = 3.0e-2,
+     alpha_b = 3.578236584,
+     pi_b1 = 8.98e-5,
+     pi_b2 = 1.27e-8,
+     beta_ps = 6.0e-6,
+     beta_pl = 5.0e-6,
+     beta_bm = 1.0e-6,
+     delta_ps = 2.5e0,
+     delta_pl = 3.5e-1,
+     delta_bm = 9.75e-4,
+     pi_bm1 = 1.0e-5,
+     pi_bm2 = 2.5e3,
+     pi_ps = 8.7e-2,
+     pi_pl = 1.0e-3,
+     delta_am = 7.0e-2, 
+     delta_ag = 7.0e-2,
+     pi_capm = 3.28e2,
+     pi_ci = 6.44e-3,
+     pi_ctke = 1.78e-2,
+     gamma_c = 7.04e2,
+     qn = 0.52,    
+     dn = 0.07,             
+     gamma_ink =  0.000574, 
+     pi_cnk = 0.01,
+     Nmax = 3.0e6;
+;
 // ============================
 // Vetores Globais
 // ============================
@@ -109,7 +166,7 @@ int f(realtype t, N_Vector y, N_Vector ydot, void *user_data) {
     NV_Ith_S(ydot, 0) = pi_v*V - kv1*V*IgG - kv1*V*IgM - kv2*V*TkE - kv3*V*ApM;
     NV_Ith_S(ydot, 1) = alpha_ap*(C + 1.0)*(Ap0 - Ap) - beta_ap*Ap*((cap1*V)/(cap2 + V)); 
     NV_Ith_S(ydot, 2) = beta_ap*Ap*((cap1*V)/(cap2 + V)) - beta_apm*ApM*V - gamma_apm*ApM;
-    NV_Ith_S(ydot, 3) = beta_apm*ApM*V + beta_tke*TkE*V - gamma_apm*I - gamma_ink*Nk*I - gamma_itk*TkE*I;
+    NV_Ith_S(ydot, 3) = beta_apm*ApM*V + beta_tke*TkE*V - gamma_apm*I - gamma_ink*Nk*I;
     NV_Ith_S(ydot, 4) = alpha_th*(ThN0 - ThN) - beta_th*ApM*ThN;
     NV_Ith_S(ydot, 5) = beta_th*ApM*ThN + pi_th*ApM*ThE - delta_th*ThE; 
     NV_Ith_S(ydot, 6) = alpha_tk*(C + 1)*(TkN0 - TkN) - beta_tk*(C + 1)*ApM*TkN; 
@@ -372,7 +429,6 @@ static real model(real *x){
     NV_Ith_S(y_global, 14) = C0;
     NV_Ith_S(y_global, 15) = NK0;   
 
-
     // Se o CVODE não for criado corretamente
     if (cvode_mem_global == NULL) {
         printf("Error: CVodeCreate failed\n");
@@ -478,7 +534,7 @@ static real model(real *x){
         dv_b
     );
 
-    return erro_il6 +  erro_viremia + erro_igg + erro_igm;// + erro_nk + erro_tcd4 + erro_tcd8 + erro_b;
+    return erro_nk;// + erro_igg + erro_igm; //erro_il6 +  erro_viremia + erro_igm + erro_igg;// + erro_igg + erro_igm;// + erro_nk + erro_tcd4 + erro_tcd8 + erro_b;
 }
 
 
@@ -628,6 +684,7 @@ static void salvar_resultados_csv(real *x, const string& nome_arquivo){
 
 int main(int argc, char* argv[]) {
 
+    // Inicialização do MPI
     MPI_Init(&argc, &argv);
 
     modelo_tempo.reserve(750);
@@ -707,26 +764,25 @@ int main(int argc, char* argv[]) {
     };*/
 
     /*real parametros_teste[15] = {
-        0.9,
-        0.0248544,
-        0.424335,
-        10.7653,
-        5.37473e+06,
-        0.0395011,
-        2.86424e-05,
-        0.243894,
-        1.18669e-05,
-        1004.49,
-        0.0540172,
-        0.00101818,
-        499268,
-        202227,
-        510536
+        0.808061,
+        0.0698424,
+        0.490154,
+        11.6776,
+        4.05015e+06,
+        0.0100123,
+        1.02633e-05,
+        0.0832886,
+        1.98582e-05,
+        502.752,
+        0.0354588,
+        0.00259612,
+        998162,
+        675866,
+        196598
     };
-
+    
     salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
 */
-
     // 2. Inicialização das Memórias SUNDIALS
     SUNContext_Create(MPI_COMM_WORLD, &sunctx);
     y_global = N_VNew_Serial(NEQ, sunctx);
@@ -782,46 +838,45 @@ int main(int argc, char* argv[]) {
 
     vector<real> l_bounds = {
         0.7,
-        0.009,
-        0.1,
-        5,
-        5e6,
         0.01,
-        7e-5,
-        0.1,
-        2e-6,
-        1000,
-        0.0001,
-        0.001,
-        900000,
-        100000,
-        400000
-
+        0.2,
+        9,
+        3e+06,
+        3e-3,
+        5e-6,
+        0.08,
+        5e-06,
+        502,
+        0.008,
+        0.0008,
+        3e5,
+        200000,
+        125000
     };
     
     vector<real> h_bounds = {
-        1.0,
-        0.02,
+        1.47,
+        0.08,
+        0.7,
+        12,
+        7e+06,
+        0.01,
+        4e-05,
         0.4,
-        8,
-        9e6,
-        0.04,
-        7e-4,
-        0.5,
-        5e-6,
-        1300,
-        0.001,
-        0.003,
-        1e6,
-        200000,
-        600000
+        4e-05,
+        1150,
+        0.09,
+        0.01,
+        1e+06,
+        700000,
+        500000
     };
 
     /*vector<real> l_bounds, h_bounds;
 
     for(int i = 0; i < TAM; i++){
-        l_bounds.push_back(parametros_teste[i] * 0.9);
-        h_bounds.push_back(parametros_teste[i] * 1.5);
+        l_bounds.push_back(parametros_teste[i] * 0.8);
+        h_bounds.push_back(parametros_teste[i] * 1.2);
     }*/
 
     ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
