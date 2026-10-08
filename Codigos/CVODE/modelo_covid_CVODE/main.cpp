@@ -27,6 +27,8 @@
 using realtype = sunrealtype;
 using namespace std;
 
+
+
 // ==========================================
 // Estruturas Globais do SUNDIALS (Reutilizáveis)
 // ==========================================
@@ -534,7 +536,7 @@ static real model(real *x){
         dv_b
     );
 
-    return erro_nk;// + erro_igg + erro_igm; //erro_il6 +  erro_viremia + erro_igm + erro_igg;// + erro_igg + erro_igm;// + erro_nk + erro_tcd4 + erro_tcd8 + erro_b;
+    return erro_viremia + erro_nk;// + erro_igg + erro_igm; //erro_il6 +  erro_viremia + erro_igm + erro_igg;// + erro_igg + erro_igm;// + erro_nk + erro_tcd4 + erro_tcd8 + erro_b;
 }
 
 
@@ -687,6 +689,10 @@ int main(int argc, char* argv[]) {
     // Inicialização do MPI
     MPI_Init(&argc, &argv);
 
+    int rank, num_procs;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+
     modelo_tempo.reserve(750);
     modelo_tcd4.reserve(750);
     modelo_tcd8.reserve(750);
@@ -763,32 +769,35 @@ int main(int argc, char* argv[]) {
         341491
     };*/
 
-    /*real parametros_teste[15] = {
-        0.808061,
-        0.0698424,
-        0.490154,
-        11.6776,
-        4.05015e+06,
-        0.0100123,
-        1.02633e-05,
-        0.0832886,
-        1.98582e-05,
-        502.752,
-        0.0354588,
-        0.00259612,
-        998162,
-        675866,
-        196598
+   real parametros_teste[15] = {
+         0.655807, 
+        0.0290021, 
+        0.57561 ,
+        11.8928, 
+        8.28613e+06, 
+        0.008275,
+        2.07338e-05 ,
+        0.278632 ,
+        2.28731e-05, 
+        1048.11 ,
+        0.0510446, 
+        0.0010697 ,
+        503643 ,
+        225025 ,
+        401230  
     };
     
     salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
-*/
+
     // 2. Inicialização das Memórias SUNDIALS
-    SUNContext_Create(MPI_COMM_WORLD, &sunctx);
+    /*
+        troca MPI_COMM_WORLD por MPI_COMM_SELF na inicialização do SUNDIALS. 
+        os vetores do modelo são seriais (N_VNew_Serial), cada processo precisa ter seu próprio contexto independente de solver CVODE   
+    */
+    /*SUNContext_Create(MPI_COMM_SELF, &sunctx);
     y_global = N_VNew_Serial(NEQ, sunctx);
     cvode_mem_global = CVodeCreate(CV_BDF, sunctx);
     
-    // Inicialização do CVODE
     realtype t0_init = 0.0;
     NV_Ith_S(y_global, 0) = V0;
     CVodeInit(cvode_mem_global, f, t0_init, y_global);
@@ -797,7 +806,6 @@ int main(int argc, char* argv[]) {
     A_global = SUNDenseMatrix(NEQ, NEQ, sunctx);
     LS_global = SUNLinSol_Dense(y_global, A_global, sunctx);
     CVodeSetLinearSolver(cvode_mem_global, LS_global, A_global);
-    
     CVodeSetMaxNumSteps(cvode_mem_global, 2000);
     
     /*vector<real> l_bounds, h_bounds;
@@ -836,40 +844,40 @@ int main(int argc, char* argv[]) {
     h_bounds.push_back(TkN0 * high);
     h_bounds.push_back(B0 * high);*/
 
-    vector<real> l_bounds = {
-        0.7,
+    /*vector<real> l_bounds = {
+        0.65,
         0.01,
-        0.2,
-        9,
-        3e+06,
-        3e-3,
-        5e-6,
-        0.08,
-        5e-06,
-        502,
-        0.008,
-        0.0008,
-        3e5,
+        0.5,
+        8,
+        7e+06,
+        0.001,
+        1e-05,
+        0.09,
+        1e-05,
+        702,
+        0.05,
+        0.001,
+        300000,
         200000,
-        125000
+        400000
     };
     
     vector<real> h_bounds = {
-        1.47,
-        0.08,
+        1.0,
+        0.03,
         0.7,
-        12,
-        7e+06,
-        0.01,
+        11,
+        1e7,
+        0.02,
+        3e-05,
+        0.3,
         4e-05,
-        0.4,
-        4e-05,
-        1150,
-        0.09,
-        0.01,
-        1e+06,
+        1100,
+        0.1,
+        0.003,
         700000,
-        500000
+        500000,
+        550000
     };
 
     /*vector<real> l_bounds, h_bounds;
@@ -879,7 +887,7 @@ int main(int argc, char* argv[]) {
         h_bounds.push_back(parametros_teste[i] * 1.2);
     }*/
 
-    ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
+    /*ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
     ofstream higher_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Higher_bounds/teste.csv");
     
     for(int i = 0; i < 15; i++) {
@@ -908,30 +916,33 @@ int main(int argc, char* argv[]) {
         BEST1BIN,
         time(NULL),
         0,
-        0.01
+        0.01,
+        MPI_COMM_WORLD
     );
 
-    ofstream params_otimos("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/params_otimos_cvode/teste.csv");
-    
-    cout << "Parametros otimos:" << endl;
+    // Apenas o rank 0 escreve os resultados e gráficos
+    if (rank == 0) {
 
-    for(int i = 0; i < num_par; i++)
-    {
-        cout << i << ": " << x[i] << endl;
-        params_otimos << x[i] << endl;
+        ofstream params_otimos("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/params_otimos_cvode/teste.csv");
+        cout << "Parametros otimos:" << endl;
+        for(int i = 0; i < num_par; i++) {
+            cout << i << ": " << x[i] << endl;
+            params_otimos << x[i] << endl;
+        }
+        cout << "Erro final: " << model(x) << endl;
     }
 
-    cout << "Erro final: " << model(x) << endl;
-
     salvar_resultados_csv(x, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
+
     
     N_VDestroy(y_global);
     SUNLinSolFree(LS_global);
     SUNMatDestroy(A_global);
     CVodeFree(&cvode_mem_global);
     SUNContext_Free(&sunctx);
-    MPI_Finalize();
+
     free(x);
+    MPI_Finalize();*/
 
     return 0;
 }

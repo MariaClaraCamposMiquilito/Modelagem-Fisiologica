@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string>
-
+#include <mpi.h>
 
 #define IM1 2147483563
 #define IM2 2147483399
@@ -48,7 +48,8 @@ real *differential_evolution(
     int strategy, 
     long seed, 
     real atol, 
-    real tol
+    real tol,
+    MPI_Comm comm
 );
 
 //statistics functions//

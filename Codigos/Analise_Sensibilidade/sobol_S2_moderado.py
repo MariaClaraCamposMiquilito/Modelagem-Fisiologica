@@ -421,4 +421,3 @@ imprimir_rankings("TCD4", top_TCD4, score_TCD4, param_names)
 imprimir_rankings("TCD8", top_TCD8, score_TCD8, param_names)
 imprimir_rankings("Células B", top_Bcell, score_Bcell, param_names)
 
-plt.show()
