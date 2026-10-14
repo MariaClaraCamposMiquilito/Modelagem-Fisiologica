@@ -307,7 +307,7 @@ def plot_second_order(time, S2, params_names, title, top):
         loc="upper left"
     )
     plt.tight_layout()
-    plt.savefig("/modelagem_fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/" + title + ".png", dpi=300, bbox_inches="tight")
+    plt.savefig("home/mariamiquelito/Modelagem_Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/" + title + ".png", dpi=300, bbox_inches="tight")
 
 # ============================================================
 # PLOTS
