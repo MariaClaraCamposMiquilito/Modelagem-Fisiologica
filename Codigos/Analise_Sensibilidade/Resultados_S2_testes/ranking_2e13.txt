@@ -1,0 +1,60 @@
+
+===== Virus =====
+cap1         x cap2         S2_max = 0.1567
+gamma_apm    x pi_cNK       S2_max = 0.0758
+cap1         x pi_cNK       S2_max = 0.0719
+beta_ap      x cap2         S2_max = 0.0665
+beta_ap      x cap1         S2_max = 0.0660
+cap2         x pi_cNK       S2_max = 0.0634
+beta_apm     x pi_cNK       S2_max = 0.0584
+cap2         x beta_apm     S2_max = 0.0500
+cap1         x beta_apm     S2_max = 0.0403
+cap2         x Nmax         S2_max = 0.0357
+
+===== APM =====
+cap1         x cap2         S2_max = 0.1726
+gamma_apm    x pi_cNK       S2_max = 0.0865
+beta_ap      x cap2         S2_max = 0.0587
+beta_ap      x cap1         S2_max = 0.0586
+cap2         x beta_apm     S2_max = 0.0473
+cap1         x beta_apm     S2_max = 0.0378
+gamma_apm    x gamma_c      S2_max = 0.0282
+gamma_apm    x dn           S2_max = 0.0262
+cap1         x pi_cNK       S2_max = 0.0238
+beta_apm     x pi_capm      S2_max = 0.0221
+
+===== Infectadas =====
+cap1         x cap2         S2_max = 0.1397
+gamma_apm    x pi_cNK       S2_max = 0.0847
+cap2         x pi_cNK       S2_max = 0.0741
+cap1         x pi_cNK       S2_max = 0.0580
+beta_ap      x cap2         S2_max = 0.0508
+beta_apm     x pi_cNK       S2_max = 0.0490
+beta_ap      x cap1         S2_max = 0.0480
+cap2         x beta_apm     S2_max = 0.0480
+cap1         x beta_apm     S2_max = 0.0432
+dn           x pi_cNK       S2_max = 0.0385
+
+===== Citocinas =====
+gamma_apm    x pi_cNK       S2_max = 0.0873
+cap2         x pi_cNK       S2_max = 0.0367
+cap2         x beta_apm     S2_max = 0.0361
+beta_apm     x pi_cNK       S2_max = 0.0360
+cap1         x cap2         S2_max = 0.0358
+beta_ap      x cap2         S2_max = 0.0333
+beta_apm     x pi_capm      S2_max = 0.0299
+gamma_apm    x dn           S2_max = 0.0287
+cap1         x beta_apm     S2_max = 0.0284
+gamma_apm    x gamma_c      S2_max = 0.0250
+
+===== NK =====
+cap2         x dn           S2_max = 0.0405
+beta_ap      x cap2         S2_max = 0.0262
+cap1         x dn           S2_max = 0.0242
+cap1         x cap2         S2_max = 0.0233
+cap2         x beta_apm     S2_max = 0.0215
+beta_ap      x beta_apm     S2_max = 0.0196
+beta_ap      x dn           S2_max = 0.0188
+beta_ap      x cap1         S2_max = 0.0186
+beta_ap      x pi_cNK       S2_max = 0.0169
+beta_apm     x dn           S2_max = 0.0159

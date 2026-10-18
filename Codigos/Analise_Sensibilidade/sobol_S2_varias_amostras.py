@@ -6,8 +6,8 @@ from scipy.integrate import solve_ivp
 from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 
-expoentes = [13, 14, 15]
-caminho = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes"
+expoentes = [14]
+caminho = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
 
 top = 10
 
@@ -168,117 +168,59 @@ problem = {
 n_params = problem["num_vars"]
 
 # ============================================================
-# AMOSTRAGEM
-# ============================================================
-
-n_samples = 2 ** 12
-
-param_values = sobol_sample.sample(
-    problem, 
-    n_samples,
-    calc_second_order = True
-)
-
-n_runs = len(param_values)
-print("Numero de amostras: ", n_samples)
-print("Numero total de simulações: ", n_runs)
-
-# ============================================================
 # EXECUTA SIMULAÇÕES
 # ============================================================
+def simular(param_values):
+    n_runs = len(param_values)
 
-Y_V = np.zeros((n_runs, n_time)) 
-Y_ApM = np.zeros((n_runs, n_time)) 
-Y_C = np.zeros((n_runs, n_time)) 
-Y_I = np.zeros((n_runs, n_time)) 
-Y_NK = np.zeros((n_runs, n_time)) 
+    Y = {nome: np.zeros((n_runs, n_time), dtype = np.float32) for nome in saidas}
 
-for i, X in tqdm(enumerate(param_values), total = n_runs, desc = "Simulacoes"):
-    
-    params = pars.copy()
-    params.update(dict(zip(params_ajs, X)))    # sobrescreve só os 16 do Sobol
+    for i, X in tqdm(enumerate(param_values), total = n_runs, desc = "Simulacoes"):
+        
+        params = pars.copy()
+        params.update(dict(zip(params_ajs, X)))    # sobrescreve só os 16 do Sobol
 
-    y0_i = list(y0)
-    y0_i[15] = params['NK0']
+        y0_i = list(y0)
+        y0_i[15] = params['NK0']
 
-    sol = solve_ivp(
-        modelo,
-        [t0, tf],
-        y0_i,
-        t_eval = t_eval,
-        args = (params,),
-        method = 'Radau'
-    )
+        sol = solve_ivp(
+            modelo,
+            [t0, tf],
+            y0_i,
+            t_eval = t_eval,
+            args = (params,),
+            method = 'Radau'
+        )
 
-    if (not sol.success) or sol.y.shape[1] != n_time:
-        raise RuntimeError(f"Simulação {i} falhou: {sol.message}\nparâmetros: {dict(zip(params_ajs, X))}")
+        if (not sol.success) or sol.y.shape[1] != n_time:
+            raise RuntimeError(f"Simulação {i} falhou: {sol.message}\nparâmetros: {dict(zip(params_ajs, X))}")
 
-    Y_V[i, :] = sol.y[0]
-    Y_ApM[i, :] = sol.y[2]
-    Y_C[i, :] = sol.y[14]
-    Y_I[i, :] = sol.y[3]
-    Y_NK[i, :] = sol.y[15]
+        for nome, idx in saidas.items():
+            Y[nome][i, :] = sol.y[idx]
 
-# ============================================================
-# MATRIZES SOBOL
-# ============================================================
-
-S2_V = np.zeros((n_time, n_params, n_params))
-S2_ApM = np.zeros((n_time, n_params, n_params))
-S2_C = np.zeros((n_time, n_params, n_params))
-S2_I = np.zeros((n_time, n_params, n_params))
-S2_NK = np.zeros((n_time, n_params, n_params))
+    return Y
 
 # ============================================================
 # SOBOL TEMPORAL
 # ============================================================
-print("\nCalculando Sobol temporal...")
+def calcular_sobol(Y):
+    resultados = {}
 
-for t_idx in tqdm(range(1, n_time), desc = "Sobol"):
-    # Virus
-    Si_V = sobol_analyze.analyze(
-        problem, 
-        Y_V[:, t_idx],
-        calc_second_order = True,
-        print_to_console = False
-    )
-    S2_V[t_idx, :, :] = Si_V["S2"]
+    for nome in saidas:
+        S2 = np.zeros((n_time, n_params, n_params))
 
-    # ApM
-    Si_ApM = sobol_analyze.analyze(
-        problem, 
-        Y_ApM[:, t_idx],
-        calc_second_order = True,
-        print_to_console = False
-    )
-    S2_ApM[t_idx, :, :] = Si_ApM["S2"]
-
-    # Citocinas
-    Si_C = sobol_analyze.analyze(
-        problem, 
-        Y_C[:, t_idx],
-        calc_second_order = True,
-        print_to_console = False
-    )
-    S2_C[t_idx, :, :] = Si_C["S2"]
-
-    # Células Infectadas
-    Si_I = sobol_analyze.analyze(
-        problem, 
-        Y_I[:, t_idx],
-        calc_second_order = True,
-        print_to_console = False
-    )
-    S2_I[t_idx, :, :] = Si_I["S2"]
-
-    # Natural Killers
-    Si_NK = sobol_analyze.analyze(
-        problem, 
-        Y_NK[:, t_idx],
-        calc_second_order = True,
-        print_to_console = False
-    )
-    S2_NK[t_idx, :, :] = Si_NK["S2"]
+        for t_idx in tqdm(range(1, n_time), desc = "Sobol"):
+            y = Y[nome][:, t_idx].astype(np.float64)
+            Si = sobol_analyze.analyze(
+                problem, 
+                y,
+                calc_second_order = True,
+                print_to_console = False
+            )
+            S2[t_idx] = Si["S2"]
+        
+        resultados[nome] = S2
+    return resultados
 
 # ============================================================
 # PLOT S2
@@ -309,60 +251,57 @@ def plot_second_order(time, S2, params_names, title, top):
         loc="upper left"
     )
     plt.tight_layout()
-    plt.savefig("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/" + title + ".png", dpi=300, bbox_inches="tight")
-
-# ============================================================
-# PLOTS
-# ============================================================
-top = 10
-plot_second_order(t_eval, S2_V, params_ajs, "Sobol_Segunda_Ordem_Virus", top)
-plot_second_order(t_eval, S2_ApM, params_ajs, "Sobol_Segunda_Ordem_APM", top)
-plot_second_order(t_eval, S2_C, params_ajs, "Sobol_Segunda_Ordem_Citocinas", top)
-plot_second_order(t_eval, S2_I, params_ajs, "Sobol_Segunda_Ordem_Infectadas", top)
-plot_second_order(t_eval, S2_NK, params_ajs, "Sobol_Segunda_Ordem_NK", top)
-
+    plt.savefig(caminho + title + ".png", dpi=300, bbox_inches="tight")
+    plt.close()
 # ============================================================
 # RANKING DAS INTERAÇÕES
 # ============================================================
-def ranking_pares(S2, top):
+def ranking_pares(S2, top, arquivo):
     ranking = []
     for i, j in combinations(range(n_params), 2):
         valor = np.nanmax(S2[:, i, j])
+        ranking.append((valor, params_ajs[i], params_ajs[j]))
 
-        ranking.append((
-            valor, 
-            params_ajs[i],
-            params_ajs[j]
+    ranking.sort(reverse=True)
+    ranking = ranking[:top]
 
-        ))
-    ranking.sort(reverse = True) # Ordem Decrescente
-    ranking = ranking[:top]            # fica só com os top N
+    with open(arquivo, "a") as f:
+        for valor, p1, p2 in ranking:
+            f.write(f"{p1:12s} x {p2:12s} S2_max = {valor:.4f}\n")
 
-    for valor, p1, p2, in ranking:
-        print(f"{p1:12s} x {p2:12s} S2_max = {valor:.4f}")
+# ============================================================
+# LOOP PRINCIPAL SOBRE O NÚMERO DE AMOSTRAS
+# ============================================================
+for expoente in expoentes:
+    n_samples = 2 ** expoente
 
-print("\n==============================")
-print("VÍRUS")
-print("==============================")
-ranking_pares(S2_V, top)
+    arquivo_res = caminho + f"resultados_sobol_2e{expoente}.npz"
+    arq_rank    = caminho + f"ranking_2e{expoente}.txt"
 
-print("\n==============================")
-print("CÉLULAS APM")
-print("==============================")
-ranking_pares(S2_ApM, top)
+    print(f"\n===== N = 2^{expoente} = {n_samples} =====")
 
-print("\n==============================")
-print("CITOCINAS")
-print("==============================")
-ranking_pares(S2_C, top)
+    # seed fixa: a diferença entre os N vem só do tamanho da amostra
+    param_values = sobol_sample.sample(problem, n_samples,
+                                       calc_second_order=True, seed=42)
+    print("Numero total de simulações:", len(param_values))
 
-print("\n==============================")
-print("CÉLULAS INFECTADAS")
-print("==============================")
-ranking_pares(S2_I, top)
+    Y = simular(param_values)
+    res = calcular_sobol(Y)
 
-print("\n==============================")
-print("NATURAL KILLERS")
-print("==============================")
-ranking_pares(S2_NK, top)
+    dados = {"t_eval": t_eval, "params": np.array(params_ajs)}
+
+    for nome, S2 in res.items():
+        dados[f"S2_{nome}"] = S2
+    np.savez(arquivo_res, **dados)
+    open(arq_rank, "w").close()   
+
+    for nome, S2 in res.items():
+        plot_second_order(t_eval, S2, params_ajs,
+                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}", top)
+        with open(arq_rank, "a") as f:
+            f.write(f"\n===== {nome} =====\n")
+        ranking_pares(S2, top, arq_rank)
+
+    del Y, res   # libera memória antes do próximo N
+
 
