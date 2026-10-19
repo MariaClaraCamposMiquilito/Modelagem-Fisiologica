@@ -5,6 +5,7 @@ from itertools import combinations
 from scipy.integrate import solve_ivp
 from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
+import os
 
 # ============================================================
 # MODELO
@@ -307,8 +308,14 @@ def plot_second_order(time, S2, params_names, title, top):
         loc="upper left"
     )
     plt.tight_layout()
-    plt.savefig("/home/mariamiquelito/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/" + title + ".png", dpi=300, bbox_inches="tight")
 
+    pasta_destino = os.path.expanduser("~/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes")
+    
+    os.makedirs(pasta_destino, exist_ok=True)
+    
+    caminho_completo = os.path.join(pasta_destino, title + ".png")
+    plt.savefig(caminho_completo, dpi=300, bbox_inches="tight")
+    
 # ============================================================
 # PLOTS
 # ============================================================
