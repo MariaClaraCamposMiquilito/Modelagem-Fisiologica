@@ -160,7 +160,7 @@ n_params = problem["num_vars"]
 # AMOSTRAGEM
 # ============================================================
 
-n_samples = 2 ** 15
+n_samples = 2 ** 16
 
 param_values = sobol_sample.sample(
     problem, 
@@ -320,11 +320,11 @@ def plot_second_order(time, S2, params_names, title, top):
 # PLOTS
 # ============================================================
 top = 10
-plot_second_order(t_eval, S2_V, params_ajs, "Sobol_Segunda_Ordem_Virus_2e15", top)
-plot_second_order(t_eval, S2_ApM, params_ajs, "Sobol_Segunda_Ordem_APM_2e15", top)
-plot_second_order(t_eval, S2_C, params_ajs, "Sobol_Segunda_Ordem_Citocinas_2e15", top)
-plot_second_order(t_eval, S2_I, params_ajs, "Sobol_Segunda_Ordem_Infectadas_2e15", top)
-plot_second_order(t_eval, S2_NK, params_ajs, "Sobol_Segunda_Ordem_NK_2e15", top)
+plot_second_order(t_eval, S2_V, params_ajs, "Sobol_Segunda_Ordem_Virus_2e16", top)
+plot_second_order(t_eval, S2_ApM, params_ajs, "Sobol_Segunda_Ordem_APM_2e16", top)
+plot_second_order(t_eval, S2_C, params_ajs, "Sobol_Segunda_Ordem_Citocinas_2e16", top)
+plot_second_order(t_eval, S2_I, params_ajs, "Sobol_Segunda_Ordem_Infectadas_2e16", top)
+plot_second_order(t_eval, S2_NK, params_ajs, "Sobol_Segunda_Ordem_NK_2e16", top)
 
 # ============================================================
 # RANKING DAS INTERAÇÕES
