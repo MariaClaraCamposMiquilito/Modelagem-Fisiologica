@@ -6,7 +6,7 @@ from scipy.integrate import solve_ivp
 from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 import os
-
+from multiprocessing import Pool, cpu_count
 # ============================================================
 # MODELO
 # ============================================================
@@ -183,19 +183,13 @@ n_time = 200
 t_eval = np.linspace(t0, tf, n_time)
 
 # ============================================================
-# EXECUTA SIMULAÇÕES
+# FUNÇÃO AUXILIAR PARA PARALELIZAÇÃO
 # ============================================================
 
-Y_V = np.zeros((n_runs, n_time)) 
-Y_ApM = np.zeros((n_runs, n_time)) 
-Y_C = np.zeros((n_runs, n_time)) 
-Y_I = np.zeros((n_runs, n_time)) 
-Y_NK = np.zeros((n_runs, n_time)) 
-
-for i, X in tqdm(enumerate(param_values), total = n_runs, desc = "Simulacoes"):
-    
+def rodar_simulacao(args):
+    i, X = args
     params = pars.copy()
-    params.update(dict(zip(params_ajs, X)))    # sobrescreve só os 16 do Sobol
+    params.update(dict(zip(params_ajs, X)))
 
     y0_i = list(y0)
     y0_i[15] = params['NK0']
@@ -210,14 +204,43 @@ for i, X in tqdm(enumerate(param_values), total = n_runs, desc = "Simulacoes"):
     )
 
     if (not sol.success) or sol.y.shape[1] != n_time:
-        raise RuntimeError(f"Simulação {i} falhou: {sol.message}\nparâmetros: {dict(zip(params_ajs, X))}")
+        return i, None, f"Simulação {i} falhou: {sol.message}"
 
-    Y_V[i, :] = sol.y[0]
-    Y_ApM[i, :] = sol.y[2]
-    Y_C[i, :] = sol.y[14]
-    Y_I[i, :] = sol.y[3]
-    Y_NK[i, :] = sol.y[15]
+return i, {
+    'V': sol.y[0],
+    'ApM': sol.y[2],
+    'C': sol.y[14],
+    'I': sol.y[3],
+    'NK': sol.y[15]
+}, None
 
+# ============================================================
+# EXECUTA SIMULAÇÕES EM PARALELO
+# ============================================================
+
+Y_V = np.zeros((n_runs, n_time)) 
+Y_ApM = np.zeros((n_runs, n_time)) 
+Y_C = np.zeros((n_runs, n_time)) 
+Y_I = np.zeros((n_runs, n_time)) 
+Y_NK = np.zeros((n_runs, n_time)) 
+
+# Deixa 1 núcleo livre para o sistema operacional não travar
+n_workers = max(1, cpu_count() - 1)
+print(f"Executando simulações em paralelo usando {n_workers} núcleos...")
+
+tarefas = [(i, X) for i, X in enumerate(param_values)]
+
+with Pool(processes=n_workers) as pool:
+    for i, resultado, erro in tqdm(pool.imap_unordered(rodar_simulacao, tarefas, chunksize=100), total=n_runs, desc="Simulacoes Paralelas"):
+        if erro:
+            raise RuntimeError(erro)
+        
+        Y_V[i, :] = resultado['V']
+        Y_ApM[i, :] = resultado['ApM']
+        Y_C[i, :] = resultado['C']
+        Y_I[i, :] = resultado['I']
+        Y_NK[i, :] = resultado['NK']
+        
 # ============================================================
 # MATRIZES SOBOL
 # ============================================================
