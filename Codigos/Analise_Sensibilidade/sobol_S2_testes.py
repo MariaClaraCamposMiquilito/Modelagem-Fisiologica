@@ -206,13 +206,14 @@ def rodar_simulacao(args):
     if (not sol.success) or sol.y.shape[1] != n_time:
         return i, None, f"Simulação {i} falhou: {sol.message}"
 
-return i, {
-    'V': sol.y[0],
-    'ApM': sol.y[2],
-    'C': sol.y[14],
-    'I': sol.y[3],
-    'NK': sol.y[15]
-}, None
+
+    return i, {
+        'V': sol.y[0],
+        'ApM': sol.y[2],
+        'C': sol.y[14],
+        'I': sol.y[3],
+        'NK': sol.y[15]
+    }, None
 
 # ============================================================
 # EXECUTA SIMULAÇÕES EM PARALELO
