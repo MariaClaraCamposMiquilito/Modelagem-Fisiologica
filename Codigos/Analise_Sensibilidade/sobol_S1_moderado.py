@@ -387,7 +387,10 @@ def plot_sobol_top_with_ci(time,
     plt.grid(alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    path = r"/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_testes"
+    path = "/home/mariamiquelito/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_testes"
+    
+    os.makedirs(path, exist_ok=True)
+
     plt.savefig(os.path.join(path, f"{title}.png"))
 
     plt.close()
@@ -405,7 +408,7 @@ plot_sobol_top_with_ci(
     t_eval,
     ST_V,
     ST_conf_V,
-    "Sobol Total-Order - Viremia - Top 10",
+    "ST_Viremia",
     "ST",
     param_names,
     top_V
@@ -415,7 +418,7 @@ plot_sobol_top_with_ci(
     t_eval,
     S1_V,
     S1_conf_V,
-    "Sobol First-Order - Viremia - Top 10",
+    "S1_Viremia",
     "S1",
     param_names,
     top_V
@@ -427,13 +430,13 @@ top_C = np.argsort(score_C)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_C, ST_conf_C,
-    "Sobol Total-Order - Citocinas - Top 10",
+    "ST_Citocinas",
     "ST", param_names, top_C
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_C, S1_conf_C,
-    "Sobol First-Order - Citocinas - Top 10",
+    "S1_Citocinas",
     "S1", param_names, top_C
 )
 
@@ -443,13 +446,13 @@ top_NK = np.argsort(score_NK)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_NK, ST_conf_NK,
-    "Sobol Total-Order - NK - Top 10",
+    "ST_Natural_Killers",
     "ST", param_names, top_NK
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_NK, S1_conf_NK,
-    "Sobol First-Order - NK - Top 10",
+    "S1_Natural_Killers",
     "S1", param_names, top_NK
 )
 
@@ -459,13 +462,13 @@ top_ApM = np.argsort(score_ApM)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_ApM, ST_conf_ApM,
-    "Sobol Total-Order - ApM - Top 10",
+    "ST_ApM",
     "ST", param_names, top_ApM
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_ApM, S1_conf_ApM,
-    "Sobol First-Order - ApM - Top 10",
+    "S1_ApM",
     "S1", param_names, top_ApM
 )
 
@@ -475,13 +478,13 @@ top_I = np.argsort(score_I)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_I, ST_conf_I,
-    "Sobol Total-Order - I - Top 10",
+    "ST_Infectadas",
     "ST", param_names, top_I
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_I, S1_conf_I,
-    "Sobol First-Order - I - Top 10",
+    "S1_Infectadas",
     "S1", param_names, top_I
 )
 
@@ -506,4 +509,3 @@ print("\nRanking I - ST:")
 for idx in top_I:
     print(param_names[idx], "ST =", score_I[idx])
 
-plt.show()
