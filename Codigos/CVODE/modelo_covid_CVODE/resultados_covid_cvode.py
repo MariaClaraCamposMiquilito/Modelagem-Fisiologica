@@ -178,8 +178,4 @@ y_error = [dataset_B_mean.to_numpy() - dataset_B_down.to_numpy(), dataset_B_up.t
 
 ax[1, 3].errorbar(x + 4.15,y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='green', capsize=4, elinewidth=1)
 
-plt.show() 
-
-plt.plot(df['Time'], np.log10(df['ApM']))
-plt.title("Células APM _ viremia")
-plt.show()
+plt.savefig(r"/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/Graficos/teste.png") 

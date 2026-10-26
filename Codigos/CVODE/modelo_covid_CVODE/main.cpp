@@ -769,22 +769,40 @@ int main(int argc, char* argv[]) {
         341491
     };*/
 
-   real parametros_teste[15] = {
-         0.655807, 
-        0.0290021, 
-        0.57561 ,
-        11.8928, 
-        8.28613e+06, 
-        0.008275,
-        2.07338e-05 ,
-        0.278632 ,
-        2.28731e-05, 
-        1048.11 ,
-        0.0510446, 
-        0.0010697 ,
-        503643 ,
-        225025 ,
-        401230  
+/*
+    1.47
+    0.0645
+    0.179
+    8
+    8.08e+06
+    0.0133
+    1.8e-05
+    0.3
+    1.43e-05
+    704
+    0.07
+    0.01
+    1000000
+    500000
+    250000
+*/
+
+    real parametros_teste[15] = {
+        0.928052,
+        0.0102447,
+        0.530659,
+        8.32124,
+        896970,
+        0.0180368,
+        1.20396,
+        0.0980489,
+        2.58529,
+        822057,
+        0.0543997,
+        0.00202158,
+        342031,
+        464613,
+        413065
     };
     
     salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
@@ -847,10 +865,10 @@ int main(int argc, char* argv[]) {
     /*vector<real> l_bounds = {
         0.65,
         0.01,
-        0.5,
-        8,
-        7e+06,
-        0.001,
+        0.179 * 0.8,
+        8 * 0.8,
+        8.08e+06 * 0.8,
+        0.0133 * 0.8,
         1e-05,
         0.09,
         1e-05,
@@ -865,10 +883,10 @@ int main(int argc, char* argv[]) {
     vector<real> h_bounds = {
         1.0,
         0.03,
-        0.7,
-        11,
-        1e7,
-        0.02,
+        0.179 * 1.2,
+        8 * 1.2,
+        8.08e+06 * 1.2,
+        0.0133 * 1.2,
         3e-05,
         0.3,
         4e-05,
@@ -942,7 +960,7 @@ int main(int argc, char* argv[]) {
     SUNContext_Free(&sunctx);
 
     free(x);
-    MPI_Finalize();*/
-
+    MPI_Finalize();
+*/
     return 0;
 }

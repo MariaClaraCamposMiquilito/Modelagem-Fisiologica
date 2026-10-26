@@ -171,7 +171,7 @@ print("Numero total de simulações: ", n_runs)
 
 t0 = 0.0
 tf = 72.15
-n_time = 200
+n_time = 100
 
 t_eval = np.linspace(t0, tf, n_time)
 
