@@ -462,7 +462,7 @@ top_ApM = np.argsort(score_ApM)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_ApM, ST_conf_ApM,
-    "ST_ApM_2e14",
+    "ST_ApM_2e15",
     "ST", param_names, top_ApM
 )
 
