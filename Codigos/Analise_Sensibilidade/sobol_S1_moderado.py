@@ -169,7 +169,7 @@ n_params = problem["num_vars"]
 # AMOSTRAGEM
 # ============================================================
 
-N_samples = 2**14
+N_samples = 2**15
 
 # Gerando as amostras
 param_values = sobol_sample.sample(
