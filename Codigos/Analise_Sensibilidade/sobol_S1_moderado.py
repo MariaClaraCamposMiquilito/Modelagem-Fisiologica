@@ -408,7 +408,7 @@ plot_sobol_top_with_ci(
     t_eval,
     ST_V,
     ST_conf_V,
-    "ST_Viremia_2e14",
+    "ST_Viremia_2e15",
     "ST",
     param_names,
     top_V
@@ -418,7 +418,7 @@ plot_sobol_top_with_ci(
     t_eval,
     S1_V,
     S1_conf_V,
-    "S1_Viremia_2e14",
+    "S1_Viremia_2e15",
     "S1",
     param_names,
     top_V
@@ -430,13 +430,13 @@ top_C = np.argsort(score_C)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_C, ST_conf_C,
-    "ST_Citocinas_2e14",
+    "ST_Citocinas_2e15",
     "ST", param_names, top_C
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_C, S1_conf_C,
-    "S1_Citocinas_2e14",
+    "S1_Citocinas_2e15",
     "S1", param_names, top_C
 )
 
@@ -446,13 +446,13 @@ top_NK = np.argsort(score_NK)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_NK, ST_conf_NK,
-    "ST_Natural_Killers_2e14",
+    "ST_Natural_Killers_2e15",
     "ST", param_names, top_NK
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_NK, S1_conf_NK,
-    "S1_Natural_Killers_2e14",
+    "S1_Natural_Killers_2e15",
     "S1", param_names, top_NK
 )
 
@@ -468,7 +468,7 @@ plot_sobol_top_with_ci(
 
 plot_sobol_top_with_ci(
     t_eval, S1_ApM, S1_conf_ApM,
-    "S1_ApM_2e14",
+    "S1_ApM_2e15",
     "S1", param_names, top_ApM
 )
 
@@ -478,13 +478,13 @@ top_I = np.argsort(score_I)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_I, ST_conf_I,
-    "ST_Infectadas_2e14",
+    "ST_Infectadas_2e15",
     "ST", param_names, top_I
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_I, S1_conf_I,
-    "S1_Infectadas_2e14",
+    "S1_Infectadas_2e15",
     "S1", param_names, top_I
 )
 
