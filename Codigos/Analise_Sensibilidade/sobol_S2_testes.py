@@ -128,11 +128,11 @@ problem = {
     "num_vars": len(params_ajs),
     "names": params_ajs,
     "bounds": [
-        [pars['beta_ap'] * l_bound, pars['beta_ap'] * h_bound], # beta_ap
-        [8, 11], # cap1
-        [7e6, 1e7], # cap2
+        [0.1, 0.6], # beta_ap
+        [1, 50], # cap1
+        [1e6, 1e7], # cap2
         [pars['gamma_apm'] * l_bound, pars['gamma_apm'] * h_bound], # gamma_apm
-        [pars['beta_apm'] * l_bound, pars['beta_apm'] * h_bound], # beta_apm
+        [0.001, 0.01], # beta_apm
         [pars['beta_tke'] * l_bound, pars['beta_tke'] * h_bound], # beta_tke
         [pars['gamma_iNK'] * l_bound, pars['gamma_iNK'] * h_bound], # gamma_iNK
         [pars['qn'] * l_bound, pars['qn'] * h_bound], # qn
@@ -171,7 +171,7 @@ print("Numero total de simulações: ", n_runs)
 
 t0 = 0.0
 tf = 72.15
-n_time = 100
+n_time = 50
 
 t_eval = np.linspace(t0, tf, n_time)
 

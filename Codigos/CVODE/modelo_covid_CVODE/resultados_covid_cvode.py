@@ -63,7 +63,7 @@ ax[0, 1].errorbar(x + 4.15, y, yerr = y_error, linestyle='None', label='Data', f
 
 
 ## IgG
-ax[0, 2].plot(df['Time'], np.log10(df['IgG'] + 1), color='brown')
+"""ax[0, 2].plot(df['Time'], np.log10(df['IgG'] + 1), color='brown')
 ax[0, 2].set_title("Anticorpos IgG")
 ax[0, 2].set_xlabel("t (dias)")
 ax[0, 2].set_ylabel("$log_{10} (AU/ml + 1)$")
@@ -79,10 +79,16 @@ dataset_igg_mean = np.log10(dataset_igg[dataset_igg.type == 'mean']['y'] + 1)
 y_error = [dataset_igg_mean.to_numpy() - dataset_igg_down.to_numpy(), dataset_igg_up.to_numpy() - dataset_igg_mean.to_numpy()]
 
 ax[0, 2].errorbar(x + 4.15, y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='brown', capsize=4, elinewidth=1)
-
+"""
+## ApM
+ax[0, 2].plot(df['Time'], np.log10(df['ApM'] + 1), color='brown')
+ax[0, 2].set_title("Células Apresentadoras")
+ax[0, 2].set_xlabel("t (dias)")
+ax[0, 2].set_ylabel("$log_{10} (AU/ml + 1)$")
+ax[0, 2].grid()
 
 ## IgM
-ax[0, 3].plot(df['Time'], np.log10(df['IgM'] + 1), color='orange')
+"""ax[0, 3].plot(df['Time'], np.log10(df['IgM'] + 1), color='orange')
 ax[0, 3].set_title("Anticorpos IgM")
 ax[0, 3].set_xlabel("t (dias)")
 ax[0, 3].set_ylabel("$log_{10} (AU/ml + 1)$")
@@ -98,6 +104,13 @@ dataset_igm_mean = np.log10(dataset_igm[dataset_igm.type == 'mean']['y'] + 1)
 y_error = [dataset_igm_mean.to_numpy() - dataset_igm_down.to_numpy(), dataset_igm_up.to_numpy() - dataset_igm_mean.to_numpy()]
 
 ax[0, 3].errorbar(x + 4.15, y, yerr = y_error, linestyle='None', label='Data', fmt='o', color='orange', capsize=4, elinewidth=1)
+"""
+## IgM
+ax[0, 3].plot(df['Time'], np.log10(df['I'] + 1), color='orange')
+ax[0, 3].set_title("Células Infectadas")
+ax[0, 3].set_xlabel("t (dias)")
+ax[0, 3].set_ylabel("$log_{10} (AU/ml + 1)$")
+ax[0, 3].grid()
 
 
 ## Natural Killers

@@ -22,7 +22,7 @@
 #define epsilon 1e-12
 
 #define RTOL SUN_RCONST(1.0e-4)
-#define ATOL SUN_RCONST(1.0e-4)
+#define ATOL SUN_RCONST(1.0e-10)
 
 using realtype = sunrealtype;
 using namespace std;
@@ -71,9 +71,9 @@ real pi_v = 1.47e0,
      kv1 = 9.82e-3,
      kv2 = 6.10e-5,
      kv3 = 6.45e-2,
-     alpha_ap = 1.0e0,
+     alpha_ap = 1.0,
      beta_ap = 1.79e-1,
-     cap1 = 8.0e0,
+     cap1 = 8.0,
      cap2 = 8.08e6,
      gamma_apm = 4.0e-2,
      beta_apm = 1.33e-2,
@@ -82,7 +82,7 @@ real pi_v = 1.47e0,
      beta_th = 1.8e-5,
      pi_th = 1.0e-8,
      delta_th = 3.0e-1,
-     alpha_tk = 1.0e0,
+     alpha_tk = 1.0,
      beta_tk = 1.43e-5,
      pi_tk = 1.0e-8,
      delta_tk = 3.0e-2,
@@ -92,7 +92,7 @@ real pi_v = 1.47e0,
      beta_ps = 6.0e-6,
      beta_pl = 5.0e-6,
      beta_bm = 1.0e-6,
-     delta_ps = 2.5e0,
+     delta_ps = 2.5,
      delta_pl = 3.5e-1,
      delta_bm = 9.75e-4,
      pi_bm1 = 1.0e-5,
@@ -785,34 +785,38 @@ int main(int argc, char* argv[]) {
     1000000
     500000
     250000
-*/
-
+*//*
+    gamma_apm = gamma_apm * 0.5;
     real parametros_teste[15] = {
-        0.928052,
-        0.0102447,
-        0.530659,
-        8.32124,
-        896970,
-        0.0180368,
-        1.20396,
-        0.0980489,
-        2.58529,
-        822057,
-        0.0543997,
-        0.00202158,
-        342031,
-        464613,
-        413065
+        1.47,
+        0.0645,
+        0.179,
+        8,
+        8.08e+06,
+        0.0133,
+        1.8e-05,
+        0.3,
+        1.43e-05,
+        704,
+        0.07 * 1.5,
+        0.01,
+        1000000,
+        500000,
+        250000
     };
     
     salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
+*/
+    // pi_cnk = 0.01 * 0.1
+    // cap2 = 8.08e+06 * 0.4 
+    // cap2 = 8.08e+06 * 1.5
 
     // 2. Inicialização das Memórias SUNDIALS
     /*
         troca MPI_COMM_WORLD por MPI_COMM_SELF na inicialização do SUNDIALS. 
         os vetores do modelo são seriais (N_VNew_Serial), cada processo precisa ter seu próprio contexto independente de solver CVODE   
     */
-    /*SUNContext_Create(MPI_COMM_SELF, &sunctx);
+    SUNContext_Create(MPI_COMM_SELF, &sunctx);
     y_global = N_VNew_Serial(NEQ, sunctx);
     cvode_mem_global = CVodeCreate(CV_BDF, sunctx);
     
@@ -862,19 +866,19 @@ int main(int argc, char* argv[]) {
     h_bounds.push_back(TkN0 * high);
     h_bounds.push_back(B0 * high);*/
 
-    /*vector<real> l_bounds = {
+    vector<real> l_bounds = {
         0.65,
         0.01,
-        0.179 * 0.8,
-        8 * 0.8,
-        8.08e+06 * 0.8,
-        0.0133 * 0.8,
+        0.2,
+        1,
+        1e6,
+        1e-3,
         1e-05,
         0.09,
         1e-05,
         702,
         0.05,
-        0.001,
+        0.01,
         300000,
         200000,
         400000
@@ -883,16 +887,16 @@ int main(int argc, char* argv[]) {
     vector<real> h_bounds = {
         1.0,
         0.03,
-        0.179 * 1.2,
-        8 * 1.2,
-        8.08e+06 * 1.2,
-        0.0133 * 1.2,
+        0.7,
+        50,
+        1e7,
+        0.0133,
         3e-05,
         0.3,
         4e-05,
         1100,
         0.1,
-        0.003,
+        0.01,
         700000,
         500000,
         550000
@@ -905,7 +909,7 @@ int main(int argc, char* argv[]) {
         h_bounds.push_back(parametros_teste[i] * 1.2);
     }*/
 
-    /*ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
+    ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
     ofstream higher_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Higher_bounds/teste.csv");
     
     for(int i = 0; i < 15; i++) {
@@ -961,6 +965,6 @@ int main(int argc, char* argv[]) {
 
     free(x);
     MPI_Finalize();
-*/
+
     return 0;
 }
