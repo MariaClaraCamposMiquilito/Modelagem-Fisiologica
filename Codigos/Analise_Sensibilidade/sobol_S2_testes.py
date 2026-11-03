@@ -302,7 +302,7 @@ def plot_second_order(time, S2, params_names, title, top):
     )
     plt.tight_layout()
 
-    pasta_destino = "~//Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade"
+    pasta_destino = os.path.expanduser("~/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade")
     
     os.makedirs(pasta_destino, exist_ok=True)
     
