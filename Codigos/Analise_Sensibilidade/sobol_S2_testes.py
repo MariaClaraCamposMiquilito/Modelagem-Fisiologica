@@ -143,7 +143,7 @@ problem = {
         [pars['pi_ci'] * l_bound, pars['pi_ci'] * h_bound], # pi_ci
         [pars['pi_ctke'] * l_bound, pars['pi_ctke'] * h_bound], # pi_ctke
         [pars['gamma_c'] * l_bound, pars['gamma_c'] * h_bound], # gamma_c
-        [0.001, 0.003], # pi_cNK
+        [0.001, 0.01], # pi_cNK
     ]
 }
 
