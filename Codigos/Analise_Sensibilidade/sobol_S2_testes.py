@@ -10,6 +10,8 @@ import os
 # ============================================================
 # MODELO
 # ============================================================
+path2 = os.path.expanduser("~/Maria_Clara/Modelagem-Fisiologica")
+path = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica"
 
 def modelo(t, y, p):  
   V, Ap, ApM, I, ThN, ThE, TkN, TkE, B, Ps, Pl, Bm, IgM, IgG, C, NK = y[0], y[1], y[2], y[3], y[4], y[5], y[6], y[7], y[8], y[9], y[10], y[11], y[12], y[13], y[14], y[15]
@@ -121,8 +123,8 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
 # PROBLEMA SOBOL
 # ============================================================
 
-l_bound = 0.9
-h_bound = 1.1
+l_bound = 0.7
+h_bound = 1.3
 
 problem = {
     "num_vars": len(params_ajs),
@@ -130,7 +132,7 @@ problem = {
     "bounds": [
         [0.1, 0.6], # beta_ap
         [1, 50], # cap1
-        [1e6, 1e7], # cap2
+        [1e6, 2e7], # cap2
         [pars['gamma_apm'] * l_bound, pars['gamma_apm'] * h_bound], # gamma_apm
         [0.001, 0.01], # beta_apm
         [pars['beta_tke'] * l_bound, pars['beta_tke'] * h_bound], # beta_tke
@@ -153,7 +155,7 @@ n_params = problem["num_vars"]
 # AMOSTRAGEM
 # ============================================================
 
-n_samples = 2 ** 16
+n_samples = 2 ** 15
 
 param_values = sobol_sample.sample(
     problem, 
@@ -302,7 +304,7 @@ def plot_second_order(time, S2, params_names, title, top):
     )
     plt.tight_layout()
 
-    pasta_destino = os.path.expanduser("~/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade")
+    pasta_destino = path2 + "/Codigos/Analise_Sensibilidade/Resultados_S2_testes"
     
     os.makedirs(pasta_destino, exist_ok=True)
     
@@ -313,11 +315,11 @@ def plot_second_order(time, S2, params_names, title, top):
 # PLOTS
 # ============================================================
 top = 10
-plot_second_order(t_eval, S2_V, params_ajs, "Sobol_Segunda_Ordem_Virus_2e16", top)
-plot_second_order(t_eval, S2_ApM, params_ajs, "Sobol_Segunda_Ordem_APM_2e16", top)
-plot_second_order(t_eval, S2_C, params_ajs, "Sobol_Segunda_Ordem_Citocinas_2e16", top)
-plot_second_order(t_eval, S2_I, params_ajs, "Sobol_Segunda_Ordem_Infectadas_2e16", top)
-plot_second_order(t_eval, S2_NK, params_ajs, "Sobol_Segunda_Ordem_NK_2e16", top)
+plot_second_order(t_eval, S2_V, params_ajs, "Sobol_Segunda_Ordem_Virus_2e15_bounds2", top)
+plot_second_order(t_eval, S2_ApM, params_ajs, "Sobol_Segunda_Ordem_APM_2e15_bounds2", top)
+plot_second_order(t_eval, S2_C, params_ajs, "Sobol_Segunda_Ordem_Citocinas_2e15_bounds2", top)
+plot_second_order(t_eval, S2_I, params_ajs, "Sobol_Segunda_Ordem_Infectadas_2e15_bounds2", top)
+plot_second_order(t_eval, S2_NK, params_ajs, "Sobol_Segunda_Ordem_NK_2e15_bounds2", top)
 
 # ============================================================
 # RANKING DAS INTERAÇÕES
@@ -338,5 +340,17 @@ def ranking_pares(S2, top):
     for valor, p1, p2, in ranking:
         print(f"{p1:12s} x {p2:12s} S2_max = {valor:.4f}")
 
-print("\n==============================")
-print("VÍRUS")
+print("\n--- VÍRUS ---")
+ranking_pares(S2_V, top)
+
+print("\n--- ApM ---")
+ranking_pares(S2_ApM, top)
+
+print("\n--- CITOCINAS ---")
+ranking_pares(S2_C, top)
+
+print("\n--- INFECTADAS ---")
+ranking_pares(S2_I, top)
+
+print("\n--- NATURAL KILLERS ---")
+ranking_pares(S2_NK, top)
