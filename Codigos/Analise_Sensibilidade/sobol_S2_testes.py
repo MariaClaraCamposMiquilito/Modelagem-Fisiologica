@@ -10,7 +10,7 @@ import os
 # ============================================================
 # MODELO
 # ============================================================
-path2 = os.path.expanduser("~/Maria_Clara/Modelagem-Fisiologica")
+path2 = os.path.expanduser("~/Modelagem-Fisiologica")
 path = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica"
 
 def modelo(t, y, p):  
