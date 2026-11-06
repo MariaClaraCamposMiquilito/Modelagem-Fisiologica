@@ -123,7 +123,7 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
 # PROBLEMA SOBOL
 # ============================================================
 
-l_bound = 0.75
+l_bound = 0.65
 h_bound = 1.25
 
 problem = {
@@ -132,7 +132,7 @@ problem = {
     "bounds": [
         [0.1, 0.6], # beta_ap
         [1, 50], # cap1
-        [1e6, 2e7], # cap2
+        [1e6, 1e7], # cap2
         [pars['gamma_apm'] * l_bound, pars['gamma_apm'] * h_bound], # gamma_apm
         [0.001, 0.01], # beta_apm
         [pars['beta_tke'] * l_bound, pars['beta_tke'] * h_bound], # beta_tke
