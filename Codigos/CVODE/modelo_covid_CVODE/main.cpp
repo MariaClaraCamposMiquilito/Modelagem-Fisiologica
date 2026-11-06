@@ -27,8 +27,6 @@
 using realtype = sunrealtype;
 using namespace std;
 
-
-
 // ==========================================
 // Estruturas Globais do SUNDIALS (Reutilizáveis)
 // ==========================================
@@ -785,28 +783,29 @@ int main(int argc, char* argv[]) {
     1000000
     500000
     250000
-*//*
-    gamma_apm = gamma_apm * 0.5;
-    real parametros_teste[15] = {
-        1.47,
-        0.0645,
-        0.179,
-        8,
-        8.08e+06,
-        0.0133,
-        1.8e-05,
-        0.3,
-        1.43e-05,
-        704,
-        0.07 * 1.5,
-        0.01,
-        1000000,
-        500000,
-        250000
-    };
-    
-    salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
 */
+// olhar melhor cap1 x cap2 x beta_apm x beta_ap
+// beta_tke, pi_ctke, gamma_apm, entender como eles mudam
+    real parametros_teste[15] = {
+        0.650696,
+        0.029924,
+        0.141885,
+        69.7269,
+        3.7656e+07,
+        0.00100548,
+        1.00084e-05,
+        0.279391,
+        1.03655e-05,
+        1099.78,
+        0.0500095,
+        0.00164927,
+        302488,
+        206077,
+        405139
+    };
+    pi_ctke = 1e-4;
+    salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
+
     // pi_cnk = 0.01 * 0.1
     // cap2 = 8.08e+06 * 0.4 
     // cap2 = 8.08e+06 * 1.5
@@ -816,19 +815,36 @@ int main(int argc, char* argv[]) {
         troca MPI_COMM_WORLD por MPI_COMM_SELF na inicialização do SUNDIALS. 
         os vetores do modelo são seriais (N_VNew_Serial), cada processo precisa ter seu próprio contexto independente de solver CVODE   
     */
-    SUNContext_Create(MPI_COMM_SELF, &sunctx);
+    /*SUNContext_Create(MPI_COMM_SELF, &sunctx);
     y_global = N_VNew_Serial(NEQ, sunctx);
     cvode_mem_global = CVodeCreate(CV_BDF, sunctx);
     
     realtype t0_init = 0.0;
+    
     NV_Ith_S(y_global, 0) = V0;
+    NV_Ith_S(y_global, 1)  = Ap0;
+    NV_Ith_S(y_global, 2)  = ApM0;
+    NV_Ith_S(y_global, 3)  = I0;
+    NV_Ith_S(y_global, 4)  = ThN0;
+    NV_Ith_S(y_global, 5)  = ThE0;
+    NV_Ith_S(y_global, 6)  = TkN0;
+    NV_Ith_S(y_global, 7)  = TkE0;
+    NV_Ith_S(y_global, 8)  = B0;
+    NV_Ith_S(y_global, 9)  = Ps0;
+    NV_Ith_S(y_global, 10) = Pl0;
+    NV_Ith_S(y_global, 11) = Bm0;
+    NV_Ith_S(y_global, 12) = IgM0;
+    NV_Ith_S(y_global, 13) = IgG0;
+    NV_Ith_S(y_global, 14) = C0;
+    NV_Ith_S(y_global, 15) = NK0;
+
     CVodeInit(cvode_mem_global, f, t0_init, y_global);
     CVodeSStolerances(cvode_mem_global, RTOL, ATOL);
     
     A_global = SUNDenseMatrix(NEQ, NEQ, sunctx);
     LS_global = SUNLinSol_Dense(y_global, A_global, sunctx);
     CVodeSetLinearSolver(cvode_mem_global, LS_global, A_global);
-    CVodeSetMaxNumSteps(cvode_mem_global, 2000);
+    CVodeSetMaxNumSteps(cvode_mem_global, 10000);
     
     /*vector<real> l_bounds, h_bounds;
     
@@ -866,19 +882,19 @@ int main(int argc, char* argv[]) {
     h_bounds.push_back(TkN0 * high);
     h_bounds.push_back(B0 * high);*/
 
-    vector<real> l_bounds = {
+    /*vector<real> l_bounds = {
         0.65,
         0.01,
-        0.2,
+        0.09,
         1,
-        1e6,
-        1e-3,
+        7e6,
+        0.001,
         1e-05,
         0.09,
         1e-05,
         702,
         0.05,
-        0.01,
+        0.0009,
         300000,
         200000,
         400000
@@ -887,10 +903,10 @@ int main(int argc, char* argv[]) {
     vector<real> h_bounds = {
         1.0,
         0.03,
-        0.7,
-        50,
-        1e7,
-        0.0133,
+        0.9,
+        100,
+        5e7,
+        0.133,
         3e-05,
         0.3,
         4e-05,
@@ -908,7 +924,7 @@ int main(int argc, char* argv[]) {
         l_bounds.push_back(parametros_teste[i] * 0.8);
         h_bounds.push_back(parametros_teste[i] * 1.2);
     }*/
-
+/*
     ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
     ofstream higher_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Higher_bounds/teste.csv");
     
@@ -965,6 +981,6 @@ int main(int argc, char* argv[]) {
 
     free(x);
     MPI_Finalize();
-
+*/
     return 0;
 }

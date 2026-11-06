@@ -123,8 +123,8 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
 # PROBLEMA SOBOL
 # ============================================================
 
-l_bound = 0.7
-h_bound = 1.3
+l_bound = 0.75
+h_bound = 1.25
 
 problem = {
     "num_vars": len(params_ajs),
