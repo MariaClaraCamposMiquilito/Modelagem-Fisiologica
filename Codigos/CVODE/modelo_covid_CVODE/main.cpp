@@ -18,7 +18,7 @@
 
 #define real double
 #define NEQ 16
-#define TAM 15
+#define TAM 17
 #define epsilon 1e-12
 
 #define RTOL SUN_RCONST(1.0e-4)
@@ -394,21 +394,23 @@ static real model(real *x){
     modelo_nk.clear();
 
     // parâmetros ajustados
-    pi_v     = x[0];
-    kv3      = x[1];
-    beta_ap  = x[2];
-    cap1     = x[3];
-    cap2     = x[4];
-    beta_apm = x[5];
-    beta_th  = x[6];
-    delta_th = x[7];
-    beta_tk  = x[8];
-    gamma_c  = x[9];
-    dn       = x[10];
-    pi_cnk   = x[11];
-    Ap0      = x[12];
-    TkN0     = x[13];
-    B0       = x[14];
+    pi_v      = x[0];
+    kv3       = x[1];
+    beta_ap   = x[2];
+    cap1      = x[3];
+    cap2      = x[4];
+    gamma_apm = x[5];
+    beta_apm  = x[6];
+    beta_tke  = x[7];
+    beta_th   = x[8];
+    delta_th  = x[9];
+    beta_tk   = x[10];
+    pi_ctke   = x[11];
+    gamma_c   = x[12];
+    qn        = x[13];
+    dn        = x[14];
+    gamma_ink = x[15];
+    pi_cnk    = x[16];
 
     real Ap0_y = 1.0e6, TkN0_y = 5.0e5, B0_y = 2.5e5;
 
@@ -544,21 +546,23 @@ static real model(real *x){
 static void salvar_resultados_csv(real *x, const string& nome_arquivo){
     
     // Usa o melhor vetor encontrado pelo DE
-    pi_v     = x[0];
-    kv3      = x[1];
-    beta_ap  = x[2];
-    cap1     = x[3];
-    cap2     = x[4];
-    beta_apm = x[5];
-    beta_th  = x[6];
-    delta_th = x[7];
-    beta_tk  = x[8];
-    gamma_c  = x[9];
-    dn       = x[10];
-    pi_cnk   = x[11];
-    Ap0      = x[12];
-    TkN0     = x[13];
-    B0       = x[14];
+    pi_v      = x[0];
+    kv3       = x[1];
+    beta_ap   = x[2];
+    cap1      = x[3];
+    cap2      = x[4];
+    gamma_apm = x[5];
+    beta_apm  = x[6];
+    beta_tke  = x[7];
+    beta_th   = x[8];
+    delta_th  = x[9];
+    beta_tk   = x[10];
+    pi_ctke   = x[11];
+    gamma_c   = x[12];
+    qn        = x[13];
+    dn        = x[14];
+    gamma_ink = x[15];
+    pi_cnk    = x[16];
 
     SUNContext sunctx;
     SUNContext_Create(MPI_COMM_WORLD, &sunctx);
@@ -786,26 +790,32 @@ int main(int argc, char* argv[]) {
 */
 // olhar melhor cap1 x cap2 x beta_apm x beta_ap
 // beta_tke, pi_ctke, gamma_apm, entender como eles mudam
-    real parametros_teste[15] = {
-        0.650696,
-        0.029924,
-        0.141885,
-        69.7269,
-        3.7656e+07,
-        0.00100548,
-        1.00084e-05,
-        0.279391,
-        1.03655e-05,
-        1099.78,
-        0.0500095,
-        0.00164927,
-        302488,
-        206077,
-        405139
-    };
-    pi_ctke = 1e-4;
-    salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
 
+    /*real parametros_teste[15] = {
+        0.656678,
+        0.0890411,
+        0.100001,
+        1.7746,
+        2.05906e+07,
+        0.000225091,
+        2.4683e-05,
+        0.0949099,
+        1.02241e-05,
+        1094.16,
+        
+        0.0500225,
+        0.00903157,
+        
+    };
+    qn = 0.6;
+    gamma_apm = 2e-3;
+    gamma_ink = 0.0000574;
+    beta_tke = 3.5e-7;
+    pi_ctke = 1.78e-3;
+
+    // pi_ctke = 1e-4;
+    salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
+*/
     // pi_cnk = 0.01 * 0.1
     // cap2 = 8.08e+06 * 0.4 
     // cap2 = 8.08e+06 * 1.5
@@ -815,7 +825,7 @@ int main(int argc, char* argv[]) {
         troca MPI_COMM_WORLD por MPI_COMM_SELF na inicialização do SUNDIALS. 
         os vetores do modelo são seriais (N_VNew_Serial), cada processo precisa ter seu próprio contexto independente de solver CVODE   
     */
-    /*SUNContext_Create(MPI_COMM_SELF, &sunctx);
+    SUNContext_Create(MPI_COMM_SELF, &sunctx);
     y_global = N_VNew_Serial(NEQ, sunctx);
     cvode_mem_global = CVodeCreate(CV_BDF, sunctx);
     
@@ -882,41 +892,45 @@ int main(int argc, char* argv[]) {
     h_bounds.push_back(TkN0 * high);
     h_bounds.push_back(B0 * high);*/
 
-    /*vector<real> l_bounds = {
-        0.65,
-        0.01,
-        0.09,
-        1,
-        7e6,
-        0.001,
-        1e-05,
-        0.09,
-        1e-05,
-        702,
-        0.05,
-        0.0009,
-        300000,
-        200000,
-        400000
-    };
-    
-    vector<real> h_bounds = {
-        1.0,
-        0.03,
-        0.9,
-        100,
-        5e7,
-        0.133,
-        3e-05,
-        0.3,
-        4e-05,
-        1100,
-        0.1,
-        0.01,
-        700000,
-        500000,
-        550000
-    };
+vector<real> l_bounds = {
+    0.65,        // pi_v
+    0.01,        // kv3
+    0.1,         // beta_ap
+    1,           // cap1
+    1e6,         // cap2
+    2.8e-2,      // gamma_apm (nominal: 4.0e-2 ± 30%)
+    0.0001,      // beta_apm
+    2.45e-6,     // beta_tke  (nominal: 3.5e-6 ± 30%)
+    1e-05,       // beta_th
+    0.09,        // delta_th
+    1e-05,       // beta_tk
+    1.246e-2,    // pi_ctke   (nominal: 1.78e-2 ± 30%)
+    702,         // gamma_c
+    0.364,       // qn        (nominal: 0.52 ± 30%)
+    0.05,        // dn
+    4.018e-4,    // gamma_ink (nominal: 0.000574 ± 30%)
+    0.0001       // pi_cnk
+};
+
+vector<real> h_bounds = {
+    2.0,         // pi_v
+    0.09,        // kv3
+    1.5,         // beta_ap
+    100,         // cap1
+    5e7,         // cap2
+    5.2e-2,      // gamma_apm (nominal: 4.0e-2 ± 30%)
+    0.9,         // beta_apm
+    4.55e-6,     // beta_tke  (nominal: 3.5e-6 ± 30%)
+    3e-05,       // beta_th
+    0.3,         // delta_th
+    4e-05,       // beta_tk
+    2.314e-2,    // pi_ctke   (nominal: 1.78e-2 ± 30%)
+    1100,        // gamma_c
+    0.676,       // qn        (nominal: 0.52 ± 30%)
+    0.1,         // dn
+    7.462e-4,    // gamma_ink (nominal: 0.000574 ± 30%)
+    0.01         // pi_cnk
+};
 
     /*vector<real> l_bounds, h_bounds;
 
@@ -924,15 +938,15 @@ int main(int argc, char* argv[]) {
         l_bounds.push_back(parametros_teste[i] * 0.8);
         h_bounds.push_back(parametros_teste[i] * 1.2);
     }*/
-/*
+
     ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
     ofstream higher_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Higher_bounds/teste.csv");
     
-    for(int i = 0; i < 15; i++) {
+    for(int i = 0; i < TAM; i++) {
         lower_bounds << l_bounds[i] << endl;
     }
 
-    for(int i = 0; i < 15; i++) {
+    for(int i = 0; i < TAM; i++) {
         higher_bounds << h_bounds[i] << endl;
     }
         
@@ -981,6 +995,7 @@ int main(int argc, char* argv[]) {
 
     free(x);
     MPI_Finalize();
-*/
+
+
     return 0;
 }

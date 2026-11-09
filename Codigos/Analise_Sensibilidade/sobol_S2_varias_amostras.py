@@ -6,8 +6,8 @@ from scipy.integrate import solve_ivp
 from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 
-expoentes = [14]
-caminho = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
+expoentes = [15, 16]
+caminho = "~/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
 
 top = 10
 
@@ -138,18 +138,18 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
 # PROBLEMA SOBOL
 # ============================================================
 
-l_bound = 0.9
-h_bound = 1.1
+l_bound = 0.8
+h_bound = 1.2
 
 problem = {
     "num_vars": len(params_ajs),
     "names": params_ajs,
     "bounds": [
-        [pars['beta_ap'] * l_bound, pars['beta_ap'] * h_bound], # beta_ap
-        [8, 11], # cap1
-        [7e6, 1e7], # cap2
+        [0.1, 0.6], # beta_ap
+        [1, 100], # cap1
+        [1e6, 5e7], # cap2
         [pars['gamma_apm'] * l_bound, pars['gamma_apm'] * h_bound], # gamma_apm
-        [pars['beta_apm'] * l_bound, pars['beta_apm'] * h_bound], # beta_apm
+        [0.001, 0.01], # beta_apm
         [pars['beta_tke'] * l_bound, pars['beta_tke'] * h_bound], # beta_tke
         [pars['gamma_iNK'] * l_bound, pars['gamma_iNK'] * h_bound], # gamma_iNK
         [pars['qn'] * l_bound, pars['qn'] * h_bound], # qn
@@ -160,7 +160,7 @@ problem = {
         [pars['pi_ci'] * l_bound, pars['pi_ci'] * h_bound], # pi_ci
         [pars['pi_ctke'] * l_bound, pars['pi_ctke'] * h_bound], # pi_ctke
         [pars['gamma_c'] * l_bound, pars['gamma_c'] * h_bound], # gamma_c
-        [0.001, 0.003], # pi_cNK
+        [0.001, 0.01], # pi_cNK
     ]
 }
 
@@ -274,8 +274,8 @@ def ranking_pares(S2, top, arquivo):
 for expoente in expoentes:
     n_samples = 2 ** expoente
 
-    arquivo_res = caminho + f"resultados_sobol_2e{expoente}.npz"
-    arq_rank    = caminho + f"ranking_2e{expoente}.txt"
+    arquivo_res = caminho + f"resultados_sobol_2e{expoente}_bounds_novos.npz"
+    arq_rank    = caminho + f"ranking_2e{expoente}_bounds_novos.txt"
 
     print(f"\n===== N = 2^{expoente} = {n_samples} =====")
 
@@ -296,7 +296,7 @@ for expoente in expoentes:
 
     for nome, S2 in res.items():
         plot_second_order(t_eval, S2, params_ajs,
-                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}", top)
+                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}_bounds_novos", top)
         with open(arq_rank, "a") as f:
             f.write(f"\n===== {nome} =====\n")
         ranking_pares(S2, top, arq_rank)
