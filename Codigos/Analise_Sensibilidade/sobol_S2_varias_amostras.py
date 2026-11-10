@@ -7,13 +7,13 @@ from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 
 expoentes = [15, 16]
-caminho = "~/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
+caminho = "/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
 
 top = 10
 
 t0 = 0.0
 tf = 72.15
-n_time = 200
+n_time = 25
 t_eval = np.linspace(t0, tf, n_time)
 
 saidas = {"Virus": 0, "APM": 2, "Infectadas": 3, "Citocinas": 14, "NK": 15}
@@ -145,7 +145,7 @@ problem = {
     "num_vars": len(params_ajs),
     "names": params_ajs,
     "bounds": [
-        [0.1, 0.6], # beta_ap
+        [0.1, 0.9], # beta_ap
         [1, 100], # cap1
         [1e6, 5e7], # cap2
         [pars['gamma_apm'] * l_bound, pars['gamma_apm'] * h_bound], # gamma_apm
@@ -160,7 +160,7 @@ problem = {
         [pars['pi_ci'] * l_bound, pars['pi_ci'] * h_bound], # pi_ci
         [pars['pi_ctke'] * l_bound, pars['pi_ctke'] * h_bound], # pi_ctke
         [pars['gamma_c'] * l_bound, pars['gamma_c'] * h_bound], # gamma_c
-        [0.001, 0.01], # pi_cNK
+        [0.001, 0.09], # pi_cNK
     ]
 }
 
