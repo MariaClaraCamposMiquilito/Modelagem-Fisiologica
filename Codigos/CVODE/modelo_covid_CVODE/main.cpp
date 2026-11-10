@@ -18,7 +18,7 @@
 
 #define real double
 #define NEQ 16
-#define TAM 17
+#define TAM 15
 #define epsilon 1e-12
 
 #define RTOL SUN_RCONST(1.0e-4)
@@ -191,7 +191,7 @@ int f(realtype t, N_Vector y, N_Vector ydot, void *user_data) {
 vector<real> transforma_log10(const vector<real>& dados){
     vector<real> dados_log;
 
-    for(int i = 0; i < dados.size(); i++){
+    for(size_t i = 0; i < dados.size(); i++){
         dados_log.push_back(log10(clip(dados[i])));
     }
 
@@ -201,7 +201,7 @@ vector<real> transforma_log10(const vector<real>& dados){
 real mean(const vector<real>& dados){
     real soma = 0.0;
 
-    for(int i = 0; i < dados.size(); i++){
+    for(size_t i = 0; i < dados.size(); i++){
         soma += dados[i];
     }
 
@@ -211,49 +211,44 @@ real mean(const vector<real>& dados){
 real stddev(const vector<real>& dados){
     real media = mean(dados);
     real soma = 0.0;
-
-    for(int i = 0; i < dados.size(); i++){
+ 
+    for(size_t i = 0; i < dados.size(); i++){
         soma += pow(dados[i] - media, 2);
     }
-
-    return sqrt(soma / dados.size());
+ 
+    real dv = sqrt(soma / dados.size());
+ 
+    // Evita divisão por zero no z-score (ex.: um único ponto ou dados constantes)
+    if(dv < epsilon){
+        dv = 1.0;
+    }
+ 
+    return dv;
 }
 
 vector<real> calcula_zscore(const vector<real>& dados, real media, real dv){
     vector<real> z;
 
-    for(int i = 0; i < dados.size(); i++){
+    for(size_t i = 0; i < dados.size(); i++){
         z.push_back((dados[i] - media) / dv);
     }
 
     return z;
 }
 
-real mse(const vector<real>& modelo_z, const vector<real>& dados_z){
-    if(modelo_z.size() != dados_z.size()){
-        return 1e18;
-    }
-
-    real soma = 0.0;
-    vector<real> res;
-    for(int i = 0; i < dados_z.size(); i++){
-        res.push_back(pow((modelo_z[i] - dados_z[i]), 2));
-    }
-
-    return mean(res);
-}
-
 // ============================
 // Interpolação
 // ============================
-static real lagrange(real x, vector<real>& x_v, vector<real>& y_v)
+static real lagrange(real x, const vector<real>& x_v, const vector<real>& y_v)
 {
+    if (x_v.empty()) return 0.0;
     if (x <= x_v[0]) return y_v[0];
     if (x >= x_v[x_v.size() - 1]) return y_v[y_v.size() - 1];
-
-    real x0, x1, y0, y1, L0, L1;
-
-    for(int i = 1; i < x_v.size(); i++)
+ 
+    // Inicializados para nunca ficarem indefinidos
+    real x0 = x_v[0], x1 = x_v[1], y0 = y_v[0], y1 = y_v[1];
+ 
+    for(size_t i = 1; i < x_v.size(); i++)
     {
         if(x <= x_v[i])
         {
@@ -264,10 +259,10 @@ static real lagrange(real x, vector<real>& x_v, vector<real>& y_v)
             break;
         }
     }
-
-    L0 = (x - x1) / (x0 - x1);
-    L1 = (x - x0) / (x1 - x0);
-
+ 
+    real L0 = (x - x1) / (x0 - x1);
+    real L1 = (x - x0) / (x1 - x0);
+ 
     return L0 * y0 + L1 * y1;
 }
 
@@ -323,11 +318,9 @@ real calcula_erro_populacao(const vector<real>& tempo_dados, const vector<real>&
 
     real soma_mse = 0.0;
 
-    for(int i = 0; i < tempo_dados.size(); i++){
+    for(size_t i = 0; i < tempo_dados.size(); i++){
 
-        real valor = lagrange(tempo_dados[i],
-                              const_cast<vector<real>&>(tempo_modelo),
-                              const_cast<vector<real>&>(modelo));
+        real valor = lagrange(tempo_dados[i], tempo_modelo, modelo);
 
         real valor_log = log10(clip(valor));
 
@@ -340,24 +333,20 @@ real calcula_erro_populacao(const vector<real>& tempo_dados, const vector<real>&
 }
 
 
+
 // VERIFICANDO ERROS DO SUNDIALS
 static int check_retval(void* returnvalue, const char* funcname, int opt){
   int* retval;
-
+ 
   // Caso para quando a função deveria retornar um ponteiro
   if (opt == 0 && returnvalue == NULL){
     fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
             funcname);
     return (1);
-	// stderr = saída padrão de erro
   }
-
+ 
   // caso para quando a função SUNDIAL retorn um inteiro de status
-  /* 
-  normalmente: 
-  	retval >= 0  → sucesso ou aviso
-	retval < 0   → erro
-  */
+  // retval >= 0 → sucesso ou aviso; retval < 0 → erro
   else if (opt == 1){
     retval = (int*)returnvalue;
     if (*retval < 0){
@@ -366,17 +355,17 @@ static int check_retval(void* returnvalue, const char* funcname, int opt){
       return (1);
     }
   }
-
+ 
   // caso para verificar se o ponteiro também é null, normalmente para funções qque alocam memória fora do SUNDIALS
   else if (opt == 2 && returnvalue == NULL){
     fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
             funcname);
     return (1);
   }
-
+ 
   return (0);
 }
-
+ 
 
 // ============================
 // Função objetivo
@@ -399,18 +388,17 @@ static real model(real *x){
     beta_ap   = x[2];
     cap1      = x[3];
     cap2      = x[4];
-    gamma_apm = x[5];
-    beta_apm  = x[6];
-    beta_tke  = x[7];
-    beta_th   = x[8];
-    delta_th  = x[9];
-    beta_tk   = x[10];
-    pi_ctke   = x[11];
-    gamma_c   = x[12];
-    qn        = x[13];
-    dn        = x[14];
-    gamma_ink = x[15];
-    pi_cnk    = x[16];
+    beta_apm  = x[5];
+    beta_th   = x[6];
+    delta_th  = x[7];
+    beta_tk   = x[8];
+    gamma_c   = x[9];
+    dn        = x[10];
+    pi_cnk    = x[11];
+    Ap0       = x[12];
+    TkN0      = x[13];
+    B0        = x[14];
+
 
     real Ap0_y = 1.0e6, TkN0_y = 5.0e5, B0_y = 2.5e5;
 
@@ -536,7 +524,7 @@ static real model(real *x){
         dv_b
     );
 
-    return erro_viremia + erro_nk;// + erro_igg + erro_igm; //erro_il6 +  erro_viremia + erro_igm + erro_igg;// + erro_igg + erro_igm;// + erro_nk + erro_tcd4 + erro_tcd8 + erro_b;
+    return erro_nk;// + erro_igg + erro_igm; //erro_il6 +  erro_viremia + erro_igm + erro_igg;// + erro_igg + erro_igm;// + erro_nk + erro_tcd4 + erro_tcd8 + erro_b;
 }
 
 
@@ -551,24 +539,24 @@ static void salvar_resultados_csv(real *x, const string& nome_arquivo){
     beta_ap   = x[2];
     cap1      = x[3];
     cap2      = x[4];
-    gamma_apm = x[5];
-    beta_apm  = x[6];
-    beta_tke  = x[7];
-    beta_th   = x[8];
-    delta_th  = x[9];
-    beta_tk   = x[10];
-    pi_ctke   = x[11];
-    gamma_c   = x[12];
-    qn        = x[13];
-    dn        = x[14];
-    gamma_ink = x[15];
-    pi_cnk    = x[16];
-
-    SUNContext sunctx;
-    SUNContext_Create(MPI_COMM_WORLD, &sunctx);
-
-    N_Vector y = N_VNew_Serial(NEQ, sunctx);
-
+    beta_apm  = x[5];
+    beta_th   = x[6];
+    delta_th  = x[7];
+    beta_tk   = x[8];
+    gamma_c   = x[9];
+    dn        = x[10];
+    pi_cnk    = x[11];
+    Ap0       = x[12];
+    TkN0      = x[13];
+    B0        = x[14];
+ 
+    // Contexto local (nome diferente do global para não haver sombreamento)
+    // MPI_COMM_SELF: vetores seriais, cada processo é independente
+    SUNContext ctx_local;
+    SUNContext_Create(MPI_COMM_SELF, &ctx_local);
+ 
+    N_Vector y = N_VNew_Serial(NEQ, ctx_local);
+ 
     real Ap0_y = 1.0e6, TkN0_y = 5.0e5, B0_y = 2.5e5;
     
     NV_Ith_S(y, 0)  = V0;
@@ -587,37 +575,37 @@ static void salvar_resultados_csv(real *x, const string& nome_arquivo){
     NV_Ith_S(y, 13) = IgG0;
     NV_Ith_S(y, 14) = C0;
     NV_Ith_S(y, 15) = NK0;
-
-    void *cvode_mem = CVodeCreate(CV_BDF, sunctx);
+ 
+    void *cvode_mem = CVodeCreate(CV_BDF, ctx_local);
     if (cvode_mem == NULL) {
         cout << "Erro: CVodeCreate falhou ao salvar CSV." << endl;
         N_VDestroy(y);
-        SUNContext_Free(&sunctx);
+        SUNContext_Free(&ctx_local);
         return;
     }
-
+ 
     realtype t0 = 0.0;
     int retval = CVodeInit(cvode_mem, f, t0, y);
     if (retval != CV_SUCCESS) {
         cout << "Erro: CVodeInit falhou ao salvar CSV." << endl;
         N_VDestroy(y);
         CVodeFree(&cvode_mem);
-        SUNContext_Free(&sunctx);
+        SUNContext_Free(&ctx_local);
         return;
     }
-
+ 
     retval = CVodeSStolerances(cvode_mem, RTOL, ATOL);
     if (retval != CV_SUCCESS) {
         cout << "Erro: CVodeSStolerances falhou ao salvar CSV." << endl;
         N_VDestroy(y);
         CVodeFree(&cvode_mem);
-        SUNContext_Free(&sunctx);
+        SUNContext_Free(&ctx_local);
         return;
     }
-
-    SUNMatrix A = SUNDenseMatrix(NEQ, NEQ, sunctx);
-    SUNLinearSolver LS = SUNLinSol_Dense(y, A, sunctx);
-
+ 
+    SUNMatrix A = SUNDenseMatrix(NEQ, NEQ, ctx_local);
+    SUNLinearSolver LS = SUNLinSol_Dense(y, A, ctx_local);
+ 
     retval = CVodeSetLinearSolver(cvode_mem, LS, A);
     if (retval != CV_SUCCESS) {
         cout << "Erro: CVodeSetLinearSolver falhou ao salvar CSV." << endl;
@@ -625,28 +613,31 @@ static void salvar_resultados_csv(real *x, const string& nome_arquivo){
         SUNLinSolFree(LS);
         SUNMatDestroy(A);
         CVodeFree(&cvode_mem);
-        SUNContext_Free(&sunctx);
+        SUNContext_Free(&ctx_local);
         return;
     }
-
+ 
+    // Mesmo limite de passos usado na otimização
+    CVodeSetMaxNumSteps(cvode_mem, 10000);
+ 
     ofstream csv(nome_arquivo);
-
+ 
     if (!csv.is_open()) {
         cout << "Erro ao criar arquivo " << nome_arquivo << endl;
         N_VDestroy(y);
         SUNLinSolFree(LS);
         SUNMatDestroy(A);
         CVodeFree(&cvode_mem);
-        SUNContext_Free(&sunctx);
+        SUNContext_Free(&ctx_local);
         return;
     }
-
+ 
     csv << "Time,V,Ap,ApM,I,ThN,ThE,TkN,TkE,B,Ps,Pl,Bm,IgM,IgG,C,NK\n";
-
+ 
     realtype t = t0;
     realtype t1 = 72.15;
     realtype dt = 0.1;
-
+ 
     // Salva também a condição inicial
     csv << t << ","
         << NV_Ith_S(y, 0)  << "," << NV_Ith_S(y, 1)  << "," << NV_Ith_S(y, 2)  << ","
@@ -655,18 +646,18 @@ static void salvar_resultados_csv(real *x, const string& nome_arquivo){
         << NV_Ith_S(y, 9)  << "," << NV_Ith_S(y, 10) << "," << NV_Ith_S(y, 11) << ","
         << NV_Ith_S(y, 12) << "," << NV_Ith_S(y, 13) << "," << NV_Ith_S(y, 14) << ","
         << NV_Ith_S(y, 15) << "\n";
-
+ 
     while (t < t1) {
         realtype tret;
         retval = CVode(cvode_mem, t + dt, y, &tret, CV_NORMAL);
-
+ 
         if (retval < 0) {
             cout << "Erro: CVode falhou ao salvar CSV em t = " << t << endl;
             break;
         }
-
+ 
         t = tret;
-
+ 
         csv << t << ","
             << NV_Ith_S(y, 0)  << "," << NV_Ith_S(y, 1)  << "," << NV_Ith_S(y, 2)  << ","
             << NV_Ith_S(y, 3)  << "," << NV_Ith_S(y, 4)  << "," << NV_Ith_S(y, 5)  << ","
@@ -675,16 +666,16 @@ static void salvar_resultados_csv(real *x, const string& nome_arquivo){
             << NV_Ith_S(y, 12) << "," << NV_Ith_S(y, 13) << "," << NV_Ith_S(y, 14) << ","
             << NV_Ith_S(y, 15) << "\n";
     }
-
+ 
     csv.close();
-
+ 
     N_VDestroy(y);
     SUNLinSolFree(LS);
     SUNMatDestroy(A);
     CVodeFree(&cvode_mem);
-    SUNContext_Free(&sunctx);
+    SUNContext_Free(&ctx_local);
 }
-
+ 
 
 int main(int argc, char* argv[]) {
 
@@ -752,83 +743,40 @@ int main(int argc, char* argv[]) {
     media_igg = mean(data_log_igg);
     dv_igg = stddev(data_log_igg);
     z_igg = calcula_zscore(data_log_igg, media_igg, dv_igg);
-    
-    /*real parametros_teste[15] = {
-        0.640143,
-        0.0125757,
-        0.194366,
-        4.26304,
-        6.11478e+06,
-        0.0152946,
-        8.24241e-05,
-        0.260704,
-        3.30689e-06,
-        916.519,
-        9.35827e-05,
-        0.00132746,
-        974389,
-        115332,
-        341491
-    };*/
 
-/*
-    1.47
-    0.0645
-    0.179
-    8
-    8.08e+06
-    0.0133
-    1.8e-05
-    0.3
-    1.43e-05
-    704
-    0.07
-    0.01
-    1000000
-    500000
-    250000
-*/
-// olhar melhor cap1 x cap2 x beta_apm x beta_ap
-// beta_tke, pi_ctke, gamma_apm, entender como eles mudam
-
-    /*real parametros_teste[15] = {
-        0.656678,
-        0.0890411,
-        0.100001,
-        1.7746,
-        2.05906e+07,
-        0.000225091,
-        2.4683e-05,
-        0.0949099,
-        1.02241e-05,
-        1094.16,
-        
-        0.0500225,
-        0.00903157,
-        
+    real parametros_teste[15] = {
+        1.32332,
+        0.0707914,
+        0.114925,
+        1.40107,
+        2.46477e+07,
+        0.000229016,
+        1.65258e-05,
+        0.327371,
+        1.31393e-05,
+        727.199,
+        0.0768464,
+        0.0101383,
+        1.09813e+06,
+        454756,
+        270555
     };
-    qn = 0.6;
-    gamma_apm = 2e-3;
-    gamma_ink = 0.0000574;
-    beta_tke = 3.5e-7;
-    pi_ctke = 1.78e-3;
-
-    // pi_ctke = 1e-4;
+    qn = 0.364211;
+    gamma_apm = 0.0281891;
+    gamma_ink = 0.00070387;
+    beta_tke = 1.03159e-06;
+    pi_ctke = 0.0100473;
+    
     salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
-*/
-    // pi_cnk = 0.01 * 0.1
-    // cap2 = 8.08e+06 * 0.4 
-    // cap2 = 8.08e+06 * 1.5
-
+    
     // 2. Inicialização das Memórias SUNDIALS
-    /*
-        troca MPI_COMM_WORLD por MPI_COMM_SELF na inicialização do SUNDIALS. 
-        os vetores do modelo são seriais (N_VNew_Serial), cada processo precisa ter seu próprio contexto independente de solver CVODE   
-    */
-    SUNContext_Create(MPI_COMM_SELF, &sunctx);
+    /*SUNContext_Create(MPI_COMM_SELF, &sunctx);
     y_global = N_VNew_Serial(NEQ, sunctx);
     cvode_mem_global = CVodeCreate(CV_BDF, sunctx);
-    
+    if (check_retval(cvode_mem_global, "CVodeCreate", 0)) {
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
     realtype t0_init = 0.0;
     
     NV_Ith_S(y_global, 0) = V0;
@@ -848,12 +796,16 @@ int main(int argc, char* argv[]) {
     NV_Ith_S(y_global, 14) = C0;
     NV_Ith_S(y_global, 15) = NK0;
 
-    CVodeInit(cvode_mem_global, f, t0_init, y_global);
-    CVodeSStolerances(cvode_mem_global, RTOL, ATOL);
+    int rv;
+    rv = CVodeInit(cvode_mem_global, f, t0_init, y_global);
+    if (check_retval(&rv, "CVodeInit", 1)) MPI_Abort(MPI_COMM_WORLD, 1);
+    rv = CVodeSStolerances(cvode_mem_global, RTOL, ATOL);
+    if (check_retval(&rv, "CVodeSStolerances", 1)) MPI_Abort(MPI_COMM_WORLD, 1);
     
     A_global = SUNDenseMatrix(NEQ, NEQ, sunctx);
     LS_global = SUNLinSol_Dense(y_global, A_global, sunctx);
-    CVodeSetLinearSolver(cvode_mem_global, LS_global, A_global);
+    rv = CVodeSetLinearSolver(cvode_mem_global, LS_global, A_global);
+    if (check_retval(&rv, "CVodeSetLinearSolver", 1)) MPI_Abort(MPI_COMM_WORLD, 1);
     CVodeSetMaxNumSteps(cvode_mem_global, 10000);
     
     /*vector<real> l_bounds, h_bounds;
@@ -891,46 +843,42 @@ int main(int argc, char* argv[]) {
     h_bounds.push_back(Ap0 * high);
     h_bounds.push_back(TkN0 * high);
     h_bounds.push_back(B0 * high);*/
-
-vector<real> l_bounds = {
-    0.65,        // pi_v
-    0.01,        // kv3
-    0.1,         // beta_ap
-    1,           // cap1
-    1e6,         // cap2
-    2.8e-2,      // gamma_apm (nominal: 4.0e-2 ± 30%)
-    0.0001,      // beta_apm
-    2.45e-6,     // beta_tke  (nominal: 3.5e-6 ± 30%)
-    1e-05,       // beta_th
-    0.09,        // delta_th
-    1e-05,       // beta_tk
-    1.246e-2,    // pi_ctke   (nominal: 1.78e-2 ± 30%)
-    702,         // gamma_c
-    0.364,       // qn        (nominal: 0.52 ± 30%)
-    0.05,        // dn
-    4.018e-4,    // gamma_ink (nominal: 0.000574 ± 30%)
-    0.0001       // pi_cnk
-};
-
-vector<real> h_bounds = {
-    2.0,         // pi_v
-    0.09,        // kv3
-    1.5,         // beta_ap
-    100,         // cap1
-    5e7,         // cap2
-    5.2e-2,      // gamma_apm (nominal: 4.0e-2 ± 30%)
-    0.9,         // beta_apm
-    4.55e-6,     // beta_tke  (nominal: 3.5e-6 ± 30%)
-    3e-05,       // beta_th
-    0.3,         // delta_th
-    4e-05,       // beta_tk
-    2.314e-2,    // pi_ctke   (nominal: 1.78e-2 ± 30%)
-    1100,        // gamma_c
-    0.676,       // qn        (nominal: 0.52 ± 30%)
-    0.1,         // dn
-    7.462e-4,    // gamma_ink (nominal: 0.000574 ± 30%)
-    0.01         // pi_cnk
-};
+    /*
+    vector<real> l_bounds = {
+        1.323,      
+        0.05805,    
+        0.1611,     
+        7.2,        
+        7.27E+06,   
+        0.01197,    
+        1.62e-05,   
+        0.27,       
+        1.29E-05,   
+        633.6,      
+        0.063,      
+        0.009,      
+        900000,     
+        450000,    
+        225000      
+    };
+ 
+    vector<real> h_bounds = {
+        1.617,      
+        0.07095,    
+        0.1969,     
+        8.8,        
+        8.89E+06,   
+        0.01463,    
+        1.98e-05,   
+        0.33,       
+        1.57E-05,   
+        774.4,      
+        0.077,      
+        0.011,      
+        1.1e+06,    
+        550000,     
+        275000      
+    };
 
     /*vector<real> l_bounds, h_bounds;
 
@@ -938,18 +886,21 @@ vector<real> h_bounds = {
         l_bounds.push_back(parametros_teste[i] * 0.8);
         h_bounds.push_back(parametros_teste[i] * 1.2);
     }*/
-
-    ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
-    ofstream higher_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Higher_bounds/teste.csv");
-    
-    for(int i = 0; i < TAM; i++) {
-        lower_bounds << l_bounds[i] << endl;
-    }
-
-    for(int i = 0; i < TAM; i++) {
-        higher_bounds << h_bounds[i] << endl;
-    }
         
+    // Apenas o rank 0 escreve os arquivos de limites
+    /*if (rank == 0) {
+        ofstream lower_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Lower_bounds/teste.csv");
+        ofstream higher_bounds("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/Higher_bounds/teste.csv");
+        
+        for(int i = 0; i < TAM; i++) {
+            lower_bounds << l_bounds[i] << endl;
+        }
+ 
+        for(int i = 0; i < TAM; i++) {
+            higher_bounds << h_bounds[i] << endl;
+        }
+    }
+
     int n_gens = 1000;
     int pop_size = 150;
     int num_par = TAM;
@@ -972,20 +923,19 @@ vector<real> h_bounds = {
         MPI_COMM_WORLD
     );
 
-    // Apenas o rank 0 escreve os resultados e gráficos
     if (rank == 0) {
-
+ 
         ofstream params_otimos("/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/params_otimos_cvode/teste.csv");
         cout << "Parametros otimos:" << endl;
         for(int i = 0; i < num_par; i++) {
             cout << i << ": " << x[i] << endl;
             params_otimos << x[i] << endl;
         }
+        params_otimos.close();
+ 
         cout << "Erro final: " << model(x) << endl;
+        salvar_resultados_csv(x, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
     }
-
-    salvar_resultados_csv(x, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
-
     
     N_VDestroy(y_global);
     SUNLinSolFree(LS_global);
@@ -994,7 +944,7 @@ vector<real> h_bounds = {
     SUNContext_Free(&sunctx);
 
     free(x);
-    MPI_Finalize();
+    MPI_Finalize();*/
 
 
     return 0;
