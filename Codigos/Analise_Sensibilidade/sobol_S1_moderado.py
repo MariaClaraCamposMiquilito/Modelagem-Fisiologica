@@ -137,18 +137,18 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
     'beta_tke', 'gamma_iNK', 'qn', 'Nmax', 'dn', 'NK0', 'pi_capm',
     'pi_ci', 'pi_ctke', 'gamma_c', 'pi_cNK']
 
-l_bound = 0.9
-h_bound = 1.1
+l_bound = 0.8
+h_bound = 1.2
 
 problem = {
     "num_vars": len(params_ajs),
     "names": params_ajs,
     "bounds": [
-        [pars['beta_ap'] * l_bound, pars['beta_ap'] * h_bound], # beta_ap
-        [8, 11], # cap1
-        [7e6, 1e7], # cap2
+        [0.1, 0.9], # beta_ap
+        [1, 100], # cap1
+        [1e6, 5e7], # cap2
         [pars['gamma_apm'] * l_bound, pars['gamma_apm'] * h_bound], # gamma_apm
-        [pars['beta_apm'] * l_bound, pars['beta_apm'] * h_bound], # beta_apm
+        [0.001, 0.01], # beta_apm
         [pars['beta_tke'] * l_bound, pars['beta_tke'] * h_bound], # beta_tke
         [pars['gamma_iNK'] * l_bound, pars['gamma_iNK'] * h_bound], # gamma_iNK
         [pars['qn'] * l_bound, pars['qn'] * h_bound], # qn
@@ -159,7 +159,7 @@ problem = {
         [pars['pi_ci'] * l_bound, pars['pi_ci'] * h_bound], # pi_ci
         [pars['pi_ctke'] * l_bound, pars['pi_ctke'] * h_bound], # pi_ctke
         [pars['gamma_c'] * l_bound, pars['gamma_c'] * h_bound], # gamma_c
-        [0.001, 0.003], # pi_cNK
+        [0.001, 0.09], # pi_cNK
     ]
 }
 
@@ -192,7 +192,7 @@ print("Número total de simulações:", n_runs)
 
 t0 = 0.0
 tf = 72.15
-n_time = 100
+n_time = 50
 
 t_eval = np.linspace(t0, tf, n_time)
 
@@ -387,7 +387,7 @@ def plot_sobol_top_with_ci(time,
     plt.grid(alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    path = "/home/mariamiquelito/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_testes"
+    path = "/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_testes/"
     
     os.makedirs(path, exist_ok=True)
 
@@ -408,7 +408,7 @@ plot_sobol_top_with_ci(
     t_eval,
     ST_V,
     ST_conf_V,
-    "ST_Viremia_2e15",
+    "ST_Viremia_2e15_bounds_novos",
     "ST",
     param_names,
     top_V
@@ -418,7 +418,7 @@ plot_sobol_top_with_ci(
     t_eval,
     S1_V,
     S1_conf_V,
-    "S1_Viremia_2e15",
+    "S1_Viremia_2e15_bounds_novos",
     "S1",
     param_names,
     top_V
@@ -430,13 +430,13 @@ top_C = np.argsort(score_C)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_C, ST_conf_C,
-    "ST_Citocinas_2e15",
+    "ST_Citocinas_2e15_bounds_novos",
     "ST", param_names, top_C
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_C, S1_conf_C,
-    "S1_Citocinas_2e15",
+    "S1_Citocinas_2e15_bounds_novos",
     "S1", param_names, top_C
 )
 
@@ -446,13 +446,13 @@ top_NK = np.argsort(score_NK)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_NK, ST_conf_NK,
-    "ST_Natural_Killers_2e15",
+    "ST_Natural_Killers_2e15_bounds_novos",
     "ST", param_names, top_NK
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_NK, S1_conf_NK,
-    "S1_Natural_Killers_2e15",
+    "S1_Natural_Killers_2e15_bounds_novos",
     "S1", param_names, top_NK
 )
 
@@ -462,13 +462,13 @@ top_ApM = np.argsort(score_ApM)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_ApM, ST_conf_ApM,
-    "ST_ApM_2e15",
+    "ST_ApM_2e15_bounds_novos",
     "ST", param_names, top_ApM
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_ApM, S1_conf_ApM,
-    "S1_ApM_2e15",
+    "S1_ApM_2e15_bounds_novos",
     "S1", param_names, top_ApM
 )
 
@@ -478,13 +478,13 @@ top_I = np.argsort(score_I)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_I, ST_conf_I,
-    "ST_Infectadas_2e15",
+    "ST_Infectadas_2e15_bounds_novos",
     "ST", param_names, top_I
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_I, S1_conf_I,
-    "S1_Infectadas_2e15",
+    "S1_Infectadas_2e15_bounds_novos",
     "S1", param_names, top_I
 )
 

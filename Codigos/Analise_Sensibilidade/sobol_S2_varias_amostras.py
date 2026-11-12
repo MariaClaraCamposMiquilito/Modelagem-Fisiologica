@@ -16,7 +16,7 @@ tf = 72.15
 n_time = 25
 t_eval = np.linspace(t0, tf, n_time)
 
-saidas = {"Virus": 0, "APM": 2, "Infectadas": 3, "Citocinas": 14, "NK": 15}
+saidas = {"Virus": 0, "Infectadas": 3}
 
 # ============================================================
 # MODELO
@@ -207,6 +207,7 @@ def calcular_sobol(Y):
 
     for nome in saidas:
         S2 = np.zeros((n_time, n_params, n_params))
+        S2_conf = np.zeros((n_time, n_params, n_params))
 
         for t_idx in tqdm(range(1, n_time), desc = "Sobol"):
             y = Y[nome][:, t_idx].astype(np.float64)
@@ -217,15 +218,17 @@ def calcular_sobol(Y):
                 print_to_console = False
             )
             S2[t_idx] = Si["S2"]
+            S2_conf[t_idx] = Si["S2_conf"]
+
         
-        resultados[nome] = S2
+        resultados[nome] = {"S2": S2, "S2_conf": S2_conf}
     return resultados
 
 # ============================================================
 # PLOT S2
 # ============================================================
 
-def plot_second_order(time, S2, params_names, title, top):
+def plot_second_order(time, S2, S2_conf, params_names, title, top):
     pares = list(combinations(range(len(params_names)), 2))
 
     valores = []
@@ -240,7 +243,13 @@ def plot_second_order(time, S2, params_names, title, top):
     plt.figure(figsize = (12, 7))
 
     for s2_max, i, j in valores:
-        plt.plot(time, S2[:, i, j], label = f"{params_names[i]} X {params_names[j]}")
+        linha, = plt.plot(time, S2[:, i, j], label = f"{params_names[i]} X {params_names[j]}")
+
+        if S2_conf is not None:
+            inf_conf = S2[:, i, j] - S2_conf[:, i, j]
+            sup_conf = S2[:, i, j] + S2_conf[:, i, j]
+            plt.fill_between(time, inf_conf, sup_conf, color=linha.get_color(), alpha=0.15)
+    
     plt.xlabel("Tempo")
     plt.ylabel("S2")
     plt.title(title)
@@ -289,17 +298,21 @@ for expoente in expoentes:
 
     dados = {"t_eval": t_eval, "params": np.array(params_ajs)}
 
-    for nome, S2 in res.items():
-        dados[f"S2_{nome}"] = S2
+    for nome, dic_res in res.items():
+        dados[f"S2_{nome}"] = dic_res["S2"]
+        dados[f"S2_conf_{nome}"] = dic_res["S2_conf"]
+        dados[f"Y_{nome}"] = Y[nome]
+
     np.savez(arquivo_res, **dados)
+
     open(arq_rank, "w").close()   
 
-    for nome, S2 in res.items():
-        plot_second_order(t_eval, S2, params_ajs,
+    for nome, dic_res in res.items():
+        plot_second_order(t_eval, dic_res["S2"], dic_res["S2_conf"], params_ajs,
                           f"Sobol_Segunda_Ordem_{nome}_2e{expoente}_bounds_novos", top)
         with open(arq_rank, "a") as f:
             f.write(f"\n===== {nome} =====\n")
-        ranking_pares(S2, top, arq_rank)
+        ranking_pares(dic_res["S2"], top, arq_rank)
 
     del Y, res   # libera memória antes do próximo N
 

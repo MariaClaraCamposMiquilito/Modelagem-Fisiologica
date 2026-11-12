@@ -10,7 +10,7 @@ import os
 # ============================================================
 # MODELO
 # ============================================================
-path2 = os.path.expanduser("~/Modelagem-Fisiologica")
+path2 = os.path.expanduser("/home/user/Maria_Clara/Modelagem-Fisiologica")
 path = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica"
 
 def modelo(t, y, p):  
@@ -123,16 +123,16 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
 # PROBLEMA SOBOL
 # ============================================================
 
-l_bound = 0.65
-h_bound = 1.25
+l_bound = 0.8
+h_bound = 1.2
 
 problem = {
     "num_vars": len(params_ajs),
     "names": params_ajs,
     "bounds": [
-        [0.1, 0.6], # beta_ap
-        [1, 50], # cap1
-        [1e6, 1e7], # cap2
+        [0.1, 0.9], # beta_ap
+        [1, 100], # cap1
+        [1e6, 5e7], # cap2
         [pars['gamma_apm'] * l_bound, pars['gamma_apm'] * h_bound], # gamma_apm
         [0.001, 0.01], # beta_apm
         [pars['beta_tke'] * l_bound, pars['beta_tke'] * h_bound], # beta_tke
@@ -145,7 +145,7 @@ problem = {
         [pars['pi_ci'] * l_bound, pars['pi_ci'] * h_bound], # pi_ci
         [pars['pi_ctke'] * l_bound, pars['pi_ctke'] * h_bound], # pi_ctke
         [pars['gamma_c'] * l_bound, pars['gamma_c'] * h_bound], # gamma_c
-        [0.001, 0.01], # pi_cNK
+        [0.001, 0.09], # pi_cNK
     ]
 }
 
@@ -155,7 +155,7 @@ n_params = problem["num_vars"]
 # AMOSTRAGEM
 # ============================================================
 
-n_samples = 2 ** 16
+n_samples = 2 ** 17
 
 param_values = sobol_sample.sample(
     problem, 
@@ -315,11 +315,11 @@ def plot_second_order(time, S2, params_names, title, top):
 # PLOTS
 # ============================================================
 top = 10
-plot_second_order(t_eval, S2_V, params_ajs, "Sobol_Segunda_Ordem_Virus_2e16_bounds2", top)
-plot_second_order(t_eval, S2_ApM, params_ajs, "Sobol_Segunda_Ordem_APM_2e16_bounds2", top)
-plot_second_order(t_eval, S2_C, params_ajs, "Sobol_Segunda_Ordem_Citocinas_2e16_bounds2", top)
-plot_second_order(t_eval, S2_I, params_ajs, "Sobol_Segunda_Ordem_Infectadas_2e16_bounds2", top)
-plot_second_order(t_eval, S2_NK, params_ajs, "Sobol_Segunda_Ordem_NK_2e16_bounds2", top)
+plot_second_order(t_eval, S2_V, params_ajs, "Sobol_Segunda_Ordem_Virus_2e17_bounds_novos", top)
+plot_second_order(t_eval, S2_ApM, params_ajs, "Sobol_Segunda_Ordem_APM_2e17_bounds_novos", top)
+plot_second_order(t_eval, S2_C, params_ajs, "Sobol_Segunda_Ordem_Citocinas_2e17_bounds_novos", top)
+plot_second_order(t_eval, S2_I, params_ajs, "Sobol_Segunda_Ordem_Infectadas_2e17_bounds_novos", top)
+plot_second_order(t_eval, S2_NK, params_ajs, "Sobol_Segunda_Ordem_NK_2e17_bounds_novos", top)
 
 # ============================================================
 # RANKING DAS INTERAÇÕES
