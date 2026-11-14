@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Carrega o arquivo salvo (exemplo para 2^15)
-dados = np.load("/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/resultados_sobol_2e15_bounds_novos.npz")
+dados = np.load("/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/resultados_sobol_2e16_bounds_novos.npz")
 
 t_eval = dados["t_eval"]
 Y_virus = dados["Y_Virus"]
@@ -33,4 +33,4 @@ plt.grid(True, which='both', ls='--')
 plt.legend()
 
 plt.tight_layout()
-plt.savefig("/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/variancia_sobol_2e15_bounds_novos.png")
+plt.savefig("/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/variancia_sobol_2e16_bounds_novos.png")
