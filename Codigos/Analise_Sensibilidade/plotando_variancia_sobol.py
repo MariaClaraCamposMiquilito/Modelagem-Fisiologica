@@ -33,4 +33,4 @@ plt.grid(True, which='both', ls='--')
 plt.legend()
 
 plt.tight_layout()
-plt.show()
+plt.savefig("/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/variancia_sobol_2e15_bounds_novos.png")
