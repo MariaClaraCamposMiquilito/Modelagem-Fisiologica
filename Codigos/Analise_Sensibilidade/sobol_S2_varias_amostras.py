@@ -6,7 +6,7 @@ from scipy.integrate import solve_ivp
 from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 
-expoentes = [15, 16]
+expoentes = [3, 4]
 caminho = "/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
 
 top = 10
@@ -16,7 +16,7 @@ tf = 72.15
 n_time = 25
 t_eval = np.linspace(t0, tf, n_time)
 
-saidas = {"Virus": 0, "Infectadas": 3}
+saidas = {"Virus": 0, "ApM": 2, "Infectadas": 3, "Citocinas": 14, "NK": 15}
 
 # ============================================================
 # MODELO
@@ -202,15 +202,15 @@ def simular(param_values):
 # ============================================================
 # SOBOL TEMPORAL
 # ============================================================
-def calcular_sobol(Y):
+def calcular_sobol(Y_data):
     resultados = {}
 
     for nome in saidas:
         S2 = np.zeros((n_time, n_params, n_params))
         S2_conf = np.zeros((n_time, n_params, n_params))
 
-        for t_idx in tqdm(range(1, n_time), desc = "Sobol"):
-            y = Y[nome][:, t_idx].astype(np.float64)
+        for t_idx in tqdm(range(1, n_time), desc = "Sobol (Log)"):
+            y = Y_data[nome][:, t_idx].astype(np.float64)
             Si = sobol_analyze.analyze(
                 problem, 
                 y,
@@ -220,7 +220,6 @@ def calcular_sobol(Y):
             S2[t_idx] = Si["S2"]
             S2_conf[t_idx] = Si["S2_conf"]
 
-        
         resultados[nome] = {"S2": S2, "S2_conf": S2_conf}
     return resultados
 
@@ -283,8 +282,8 @@ def ranking_pares(S2, top, arquivo):
 for expoente in expoentes:
     n_samples = 2 ** expoente
 
-    arquivo_res = caminho + f"resultados_sobol_2e{expoente}_bounds_novos.npz"
-    arq_rank    = caminho + f"ranking_2e{expoente}_bounds_novos.txt"
+    arquivo_res = caminho + f"resultados_sobol_2e{expoente}_bounds_novos_log.npz"
+    arq_rank    = caminho + f"ranking_2e{expoente}_bounds_novos_log.txt"
 
     print(f"\n===== N = 2^{expoente} = {n_samples} =====")
 
@@ -294,7 +293,12 @@ for expoente in expoentes:
     print("Numero total de simulações:", len(param_values))
 
     Y = simular(param_values)
-    res = calcular_sobol(Y)
+    Y_log = {}
+
+    for nome in saidas:
+        Y_log[nome] = np.log10(Y[nome] + 1e-12)
+
+    res = calcular_sobol(Y_log)
 
     dados = {"t_eval": t_eval, "params": np.array(params_ajs)}
 
@@ -309,7 +313,7 @@ for expoente in expoentes:
 
     for nome, dic_res in res.items():
         plot_second_order(t_eval, dic_res["S2"], dic_res["S2_conf"], params_ajs,
-                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}_bounds_novos", top)
+                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}_bounds_novos_log", top)
         with open(arq_rank, "a") as f:
             f.write(f"\n===== {nome} =====\n")
         ranking_pares(dic_res["S2"], top, arq_rank)
