@@ -745,27 +745,22 @@ int main(int argc, char* argv[]) {
     z_igg = calcula_zscore(data_log_igg, media_igg, dv_igg);
 
     real parametros_teste[15] = {
-        1.32332,
-        0.0707914,
-        0.114925,
-        1.40107,
-        2.46477e+07,
-        0.000229016,
-        1.65258e-05,
-        0.327371,
-        1.31393e-05,
-        727.199,
-        0.0768464,
-        0.0101383,
-        1.09813e+06,
-        454756,
-        270555
+        1.53232,
+        0.0585251,
+        0.196588,
+        8.79815,
+        7.27711e+06,
+        0.0138918,
+        1.63974e-05,
+        0.325463,
+        1.3551e-05,
+        636.735,
+        0.0635245,
+        0.0107163,
+        909177,
+        543124,
+        246310
     };
-    qn = 0.364211;
-    gamma_apm = 0.0281891;
-    gamma_ink = 0.00070387;
-    beta_tke = 1.03159e-06;
-    pi_ctke = 0.0100473;
     
     salvar_resultados_csv(parametros_teste, "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/CVODE/modelo_covid_CVODE/Resultados_simulacoes/teste.csv");
     

@@ -6,7 +6,7 @@ from scipy.integrate import solve_ivp
 from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 
-expoentes = [3, 4]
+expoentes = [15, 16]
 caminho = "/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
 
 top = 10
@@ -209,7 +209,7 @@ def calcular_sobol(Y_data):
         S2 = np.zeros((n_time, n_params, n_params))
         S2_conf = np.zeros((n_time, n_params, n_params))
 
-        for t_idx in tqdm(range(1, n_time), desc = "Sobol (Log)"):
+        for t_idx in tqdm(range(1, n_time), desc = "Sobol"):
             y = Y_data[nome][:, t_idx].astype(np.float64)
             Si = sobol_analyze.analyze(
                 problem, 
@@ -282,23 +282,18 @@ def ranking_pares(S2, top, arquivo):
 for expoente in expoentes:
     n_samples = 2 ** expoente
 
-    arquivo_res = caminho + f"resultados_sobol_2e{expoente}_bounds_novos_log.npz"
-    arq_rank    = caminho + f"ranking_2e{expoente}_bounds_novos_log.txt"
+    arquivo_res = caminho + f"resultados_sobol_2e{expoente}_bounds_novos_conf.npz"
+    arq_rank    = caminho + f"ranking_2e{expoente}_bounds_novos_conf.txt"
 
     print(f"\n===== N = 2^{expoente} = {n_samples} =====")
 
-    # seed fixa: a diferença entre os N vem só do tamanho da amostra
-    param_values = sobol_sample.sample(problem, n_samples,
-                                       calc_second_order=True, seed=42)
+    param_values = sobol_sample.sample(problem, n_samples, calc_second_order=True, seed=42)
+
     print("Numero total de simulações:", len(param_values))
 
     Y = simular(param_values)
-    Y_log = {}
 
-    for nome in saidas:
-        Y_log[nome] = np.log10(Y[nome] + 1e-12)
-
-    res = calcular_sobol(Y_log)
+    res = calcular_sobol(Y)
 
     dados = {"t_eval": t_eval, "params": np.array(params_ajs)}
 
@@ -313,7 +308,7 @@ for expoente in expoentes:
 
     for nome, dic_res in res.items():
         plot_second_order(t_eval, dic_res["S2"], dic_res["S2_conf"], params_ajs,
-                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}_bounds_novos_log", top)
+                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}_bounds_novos_conf", top)
         with open(arq_rank, "a") as f:
             f.write(f"\n===== {nome} =====\n")
         ranking_pares(dic_res["S2"], top, arq_rank)
