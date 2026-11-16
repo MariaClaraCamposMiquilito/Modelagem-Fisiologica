@@ -162,7 +162,6 @@ problem = {
         [0.001, 0.09], # pi_cNK
     ]
 }
-
 n_params = problem["num_vars"]
 
 # ============================================================
@@ -387,7 +386,7 @@ def plot_sobol_top_with_ci(time,
     plt.grid(alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    path = "/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_testes/"
+    path = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_testes/"
     
     os.makedirs(path, exist_ok=True)
 
