@@ -7,7 +7,7 @@ from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 
 expoentes = [15, 16]
-caminho = "/home/user/Maria_Clara/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
+caminho = "/mnt/c/Users/mique/Documents/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
 
 top = 10
 
@@ -138,8 +138,8 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
 # PROBLEMA SOBOL
 # ============================================================
 
-l_bound = 0.8
-h_bound = 1.2
+l_bound = 0.6
+h_bound = 1.4
 
 problem = {
     "num_vars": len(params_ajs),
@@ -282,8 +282,8 @@ def ranking_pares(S2, top, arquivo):
 for expoente in expoentes:
     n_samples = 2 ** expoente
 
-    arquivo_res = caminho + f"resultados_sobol_2e{expoente}_bounds_novos_conf.npz"
-    arq_rank    = caminho + f"ranking_2e{expoente}_bounds_novos_conf.txt"
+    arquivo_res = caminho + f"resultados_sobol_2e{expoente}.npz"
+    arq_rank    = caminho + f"ranking_2e{expoente}.txt"
 
     print(f"\n===== N = 2^{expoente} = {n_samples} =====")
 
@@ -308,7 +308,7 @@ for expoente in expoentes:
 
     for nome, dic_res in res.items():
         plot_second_order(t_eval, dic_res["S2"], dic_res["S2_conf"], params_ajs,
-                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}_bounds_novos_conf", top)
+                          f"Sobol_Segunda_Ordem_{nome}_2e{expoente}", top)
         with open(arq_rank, "a") as f:
             f.write(f"\n===== {nome} =====\n")
         ranking_pares(dic_res["S2"], top, arq_rank)
