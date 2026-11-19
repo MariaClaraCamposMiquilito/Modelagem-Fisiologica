@@ -17,6 +17,7 @@ n_time = 25
 t_eval = np.linspace(t0, tf, n_time)
 
 saidas = {"Virus": 0, "ApM": 2, "Infectadas": 3, "Citocinas": 14, "NK": 15}
+saidas_log = {"Virus", "Infectadas"}
 
 # ============================================================
 # MODELO
@@ -211,6 +212,8 @@ def calcular_sobol(Y_data):
 
         for t_idx in tqdm(range(1, n_time), desc = "Sobol"):
             y = Y_data[nome][:, t_idx].astype(np.float64)
+            if nome in saidas_log:
+                y = np.log10(y + 1)
             Si = sobol_analyze.analyze(
                 problem, 
                 y,
@@ -260,6 +263,32 @@ def plot_second_order(time, S2, S2_conf, params_names, title, top):
     plt.tight_layout()
     plt.savefig(caminho + title + ".png", dpi=300, bbox_inches="tight")
     plt.close()
+
+# ============================================================
+# PLOT VARIÂNCIA TOTAL
+# ============================================================
+def plot_variancia_total(time, Y_data, expoente):
+    for nome in saidas:
+        serie = Y_data[nome].astype(np.float64)
+        if nome in saidas_log:
+            serie = np.log10(serie + 1)
+            rotulo_y = "Var[log10(y + 1)]"
+        else:
+            rotulo_y = "Variância"
+
+        var_t = np.var(serie, axis=0)
+        titulo = f"Variancia_Total_{nome}_2e{expoente}"
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(time, var_t, linewidth=2)
+        plt.xlabel("Tempo")
+        plt.ylabel(rotulo_y)
+        plt.title(titulo)
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(caminho + titulo + ".png", dpi=300, bbox_inches="tight")
+        plt.close()
+
 # ============================================================
 # RANKING DAS INTERAÇÕES
 # ============================================================
@@ -312,6 +341,8 @@ for expoente in expoentes:
         with open(arq_rank, "a") as f:
             f.write(f"\n===== {nome} =====\n")
         ranking_pares(dic_res["S2"], top, arq_rank)
+
+    plot_variancia_total(t_eval, Y, expoente)
 
     del Y, res   # libera memória antes do próximo N
 
