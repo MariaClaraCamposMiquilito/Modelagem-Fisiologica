@@ -8,7 +8,7 @@ from SALib.analyze import sobol as sobol_analyze
 import os
 import pandas as pd
 
-path = "/mnt/c/Users/mique/Documents/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_40_tol/"
+path = "/mnt/c/Users/mique/Documents/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_corte_var/"
 
 os.makedirs(path, exist_ok=True)
 
@@ -249,11 +249,11 @@ for i, X in tqdm(enumerate(param_values), total = len(param_values), desc = "Sim
     if not np.all(np.isfinite(sol.y)):
         raise RuntimeError(f"Simulação {i} apresentou NaN ou infinito.")
 
-    Y_V[i, :] = np.log1p(np.clip(sol.y[0], 1e-12, None))
+    Y_V[i, :]   = sol.y[0]
     Y_C[i, :]   = sol.y[14]
     Y_NK[i, :]  = sol.y[15]
     Y_ApM[i, :] = sol.y[2]
-    Y_I[i, :] = np.log1p(np.clip(sol.y[3], 1e-12, None))
+    Y_I[i, :]   = sol.y[3]
 
 # ============================================================
 # SALVAR SAÍDAS PARA DIAGNÓSTICO
@@ -261,7 +261,7 @@ for i, X in tqdm(enumerate(param_values), total = len(param_values), desc = "Sim
 print("\nDIAGNÓSTICO DAS SAÍDAS")
 
 np.savez_compressed(
-    os.path.join(path, "diagnostico_2e10_ln.npz"),
+    os.path.join(path, "diagnostico_2e15_sem_log.npz"),
     Y_V=Y_V,
     Y_I=Y_I,
     t_eval=t_eval
@@ -312,21 +312,47 @@ ST_conf_I = np.zeros((n_time, n_params))
 # ANÁLISE DE SOBOL AO LONGO DO TEMPO
 # ============================================================
 
+limiar = 1e-6
+
+var_V = np.var(Y_V, axis=0)
+var_I = np.var(Y_I, axis=0)
+
+limiar_V = limiar * np.max(var_V[np.isfinite(var_V)])
+limiar_I = limiar * np.max(var_I[np.isfinite(var_I)])
+
+
+def primeira_var_baixa(variancias, limiar):
+    candidatos = np.where((~np.isfinite(variancias[1:])) |
+                          (variancias[1:] <= limiar))[0]
+    return int(candidatos[0] + 1) if candidatos.size else len(variancias)
+
+var_baixo_V = primeira_var_baixa(var_V, limiar_V)
+var_baixo_I = primeira_var_baixa(var_I, limiar_I)
+validos_V = np.arange(n_time) < var_baixo_V
+validos_I = np.arange(n_time) < var_baixo_I
+validos_V[0] = False
+validos_I[0] = False
+
+# Instantes descartados permanecem como NaN nos gráficos e CSVs
+for matriz in (S1_V, ST_V, S1_conf_V, ST_conf_V,
+               S1_I, ST_I, S1_conf_I, ST_conf_I):
+    matriz[:] = np.nan
+
+print(f"Viremia: {np.count_nonzero(validos_V)} instantes válidos de {n_time-1}")
+print(f"Infectadas: {np.count_nonzero(validos_I)} instantes válidos de {n_time-1}")
 print("\nCalculando Sobol temporal...")
 
 for t_idx in tqdm(range(1, n_time), desc="Calc. Sobol"):
 
-    Si_V = sobol_analyze.analyze(
-        problem,
-        Y_V[:, t_idx],
-        calc_second_order=False,
-        print_to_console=False
-    )
-
-    S1_V[t_idx, :] = Si_V["S1"]
-    ST_V[t_idx, :] = Si_V["ST"]
-    S1_conf_V[t_idx, :] = Si_V["S1_conf"]
-    ST_conf_V[t_idx, :] = Si_V["ST_conf"]
+    if validos_V[t_idx]:
+        Si_V = sobol_analyze.analyze(
+            problem, Y_V[:, t_idx],
+            calc_second_order=False, print_to_console=False
+        )
+        S1_V[t_idx, :] = Si_V["S1"]
+        ST_V[t_idx, :] = Si_V["ST"]
+        S1_conf_V[t_idx, :] = Si_V["S1_conf"]
+        ST_conf_V[t_idx, :] = Si_V["ST_conf"]
 
     Si_C = sobol_analyze.analyze(
         problem,
@@ -365,19 +391,16 @@ for t_idx in tqdm(range(1, n_time), desc="Calc. Sobol"):
     S1_conf_ApM[t_idx, :] = Si_ApM["S1_conf"]
     ST_conf_ApM[t_idx, :] = Si_ApM["ST_conf"]
 
-    Si_I = sobol_analyze.analyze(
-        problem,
-        Y_I[:, t_idx],
-        calc_second_order=False,
-        print_to_console=False
-    )
+    if validos_I[t_idx]:
+        Si_I = sobol_analyze.analyze(
+            problem, Y_I[:, t_idx],
+            calc_second_order=False, print_to_console=False
+        )
+        S1_I[t_idx, :] = Si_I["S1"]
+        ST_I[t_idx, :] = Si_I["ST"]
+        S1_conf_I[t_idx, :] = Si_I["S1_conf"]
+        ST_conf_I[t_idx, :] = Si_I["ST_conf"]
 
-    S1_I[t_idx, :] = Si_I["S1"]
-    ST_I[t_idx, :] = Si_I["ST"]
-    S1_conf_I[t_idx, :] = Si_I["S1_conf"]
-    ST_conf_I[t_idx, :] = Si_I["ST_conf"]
-
-    
 # ============================================================
 # FUNÇÃO PARA PLOTAR ÍNDICES DE SOBOL + Intervalo de Confiança
 # ============================================================
@@ -415,7 +438,7 @@ def plot_sobol_top_with_ci(time,
     plt.legend()
     plt.tight_layout()
 
-    plt.savefig(os.path.join(path, f"{title}_2e15_ln.png"))
+    plt.savefig(os.path.join(path, f"{title}_2e15.png"))
 
     plt.close()
 # ============================================================
@@ -425,8 +448,9 @@ def plot_sobol_top_with_ci(time,
 n_top = 10
 
 # Viremia
-score_V = np.nanmax(ST_V, axis=0)
-top_V = np.argsort(score_V)[-n_top:][::-1]
+score_V = np.array([np.nanmax(ST_V[:, k]) if np.any(np.isfinite(ST_V[:, k])) else -np.inf for k in range(n_params)])
+top_V = np.argsort(score_V)[::-1][:n_top]
+top_V = top_V[np.isfinite(score_V[top_V])]
 
 plot_sobol_top_with_ci(
     t_eval,
@@ -497,8 +521,9 @@ plot_sobol_top_with_ci(
 )
 
 # Células Infectadas
-score_I = np.nanmax(ST_I, axis=0)
-top_I = np.argsort(score_I)[-n_top:][::-1]
+score_I = np.array([np.nanmax(ST_I[:, k]) if np.any(np.isfinite(ST_I[:, k])) else -np.inf for k in range(n_params)])
+top_I = np.argsort(score_I)[::-1][:n_top]
+top_I = top_I[np.isfinite(score_I[top_I])]
 
 plot_sobol_top_with_ci(
     t_eval, ST_I, ST_conf_I,
@@ -537,25 +562,26 @@ for idx in top_I:
 # PLOTANDO VARIÂNCIA 
 # ============================================================
 
-var_V = np.var(Y_V, axis=0)
-var_I = np.var(Y_I, axis=0)
-
 plt.figure(figsize=(10, 5))
 plt.plot(t_eval, var_V, label="Viremia")
 plt.plot(t_eval, var_I, label="Células infectadas")
 plt.xlabel("Tempo (dias)")
 plt.ylabel("Variância")
-plt.title("Variância ao longo do tempo")
+plt.title("Variância ao longo do tempo (sem log)")
 plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(path, "Variancia_temporal_2e15_ln.png"), dpi=200)
+plt.savefig(os.path.join(path, "Variancia_temporal_2e15.png"), dpi=200)
 plt.close()
 
 pd.DataFrame({
     "tempo_dias": t_eval,
     "variancia_viremia": var_V,
     "variancia_infectadas": var_I,
-}).to_csv(os.path.join(path, "variancia_temporal_2e15_ln.csv"), index=False)
+    "limiar_viremia": limiar_V,
+    "limiar_infectadas": limiar_I,
+    "valido_viremia": validos_V,
+    "valido_infectadas": validos_I,
+}).to_csv(os.path.join(path, "variancia_temporal_2e15.csv"), index=False)
 
 
 # ============================================================
@@ -586,7 +612,7 @@ for saida, (s1, st, s1_ci, st_ci) in indices_por_saida.items():
             validos = np.isfinite(curva)
             if np.any(validos):
                 jmax = int(np.nanargmax(curva)) + 1
-                maximo = float(curva[jmax - 1])
+                maximo = float(matriz[jmax, k])
                 media = float(np.nanmean(curva))
                 conf_max = float(ci[jmax, k])
                 tempo_max = float(t_eval[jmax])
@@ -599,7 +625,7 @@ for saida, (s1, st, s1_ci, st_ci) in indices_por_saida.items():
             })
 
 pd.DataFrame(resultados).to_csv(
-    os.path.join(path, "sobol_indices_temporais_2e15_ln.csv"),
+    os.path.join(path, "sobol_indices_temporais_2e15.csv"),
     index=False, float_format="%.17g"
 )
 df_rank = pd.DataFrame(rankings)
@@ -609,6 +635,6 @@ df_rank = df_rank.sort_values(
 )
 df_rank["posicao"] = df_rank.groupby(["variavel", "indice"]).cumcount() + 1
 df_rank.to_csv(
-    os.path.join(path, "sobol_rankings_2e15_ln.csv"),
+    os.path.join(path, "sobol_rankings_2e15.csv"),
     index=False, float_format="%.17g"
 )
