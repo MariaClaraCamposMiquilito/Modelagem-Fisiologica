@@ -6,6 +6,11 @@ from scipy.integrate import solve_ivp
 from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 import os
+import pandas as pd
+
+path = "/mnt/c/Users/mique/Documents/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_40_tol/"
+
+os.makedirs(path, exist_ok=True)
 
 def modelo(t, y, p):  
 
@@ -137,8 +142,8 @@ params_ajs = ['beta_ap', 'cap1', 'cap2', 'gamma_apm', 'beta_apm',
     'beta_tke', 'gamma_iNK', 'qn', 'Nmax', 'dn', 'NK0', 'pi_capm',
     'pi_ci', 'pi_ctke', 'gamma_c', 'pi_cNK']
 
-l_bound = 0.8
-h_bound = 1.2
+l_bound = 0.6
+h_bound = 1.4
 
 problem = {
     "num_vars": len(params_ajs),
@@ -168,7 +173,7 @@ n_params = problem["num_vars"]
 # AMOSTRAGEM
 # ============================================================
 
-N_samples = 2**16
+N_samples = 2**15
 
 # Gerando as amostras
 param_values = sobol_sample.sample(
@@ -228,18 +233,41 @@ for i, X in tqdm(enumerate(param_values), total = len(param_values), desc = "Sim
         modelo,
         [t0, tf],
         y0_i,
-        t_eval = t_eval,
-        args = (p,),
-        method = "Radau"
+        t_eval=t_eval,
+        args=(p,),
+        method="Radau",
+        rtol=1e-6,
+        atol=1e-9
     )
     if (not sol.success) or sol.y.shape[1] != n_time:
-        raise RuntimeError(f"Simulação {i} falhou: {sol.message}\nparâmetros: {dict(zip(params_ajs, X))}")
+        raise RuntimeError(
+            f"Simulação {i} falhou: {sol.message}\n"
+            f"Último tempo: {sol.t[-1]}\n"
+            f"Parâmetros: {dict(zip(params_ajs, X))}"
+        )
 
-    Y_V[i, :]   = np.log10(np.clip(sol.y[0], 1e-12, None) + 1)
-    Y_C[i, :]   = np.log10(np.clip(sol.y[14], 1e-12, None) + 1)
-    Y_NK[i, :]  = np.log10(np.clip(sol.y[15], 1e-12, None) + 1)
-    Y_ApM[i, :] = np.log10(np.clip(sol.y[2], 1e-12, None) + 1)
-    Y_I[i, :]   = np.log10(np.clip(sol.y[3], 1e-12, None) + 1)
+    if not np.all(np.isfinite(sol.y)):
+        raise RuntimeError(f"Simulação {i} apresentou NaN ou infinito.")
+
+    Y_V[i, :] = np.log1p(np.clip(sol.y[0], 1e-12, None))
+    Y_C[i, :]   = sol.y[14]
+    Y_NK[i, :]  = sol.y[15]
+    Y_ApM[i, :] = sol.y[2]
+    Y_I[i, :] = np.log1p(np.clip(sol.y[3], 1e-12, None))
+
+# ============================================================
+# SALVAR SAÍDAS PARA DIAGNÓSTICO
+# ============================================================
+print("\nDIAGNÓSTICO DAS SAÍDAS")
+
+np.savez_compressed(
+    os.path.join(path, "diagnostico_2e10_ln.npz"),
+    Y_V=Y_V,
+    Y_I=Y_I,
+    t_eval=t_eval
+)
+
+print("Matrizes V e I salvas")
 
 # ============================================================
 # MATRIZES SOBOL
@@ -386,11 +414,8 @@ def plot_sobol_top_with_ci(time,
     plt.grid(alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    path = "/mnt/c/Users/mique/OneDrive/Documentos/UFJF/Modelagem Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S1_testes/"
-    
-    os.makedirs(path, exist_ok=True)
 
-    plt.savefig(os.path.join(path, f"{title}.png"))
+    plt.savefig(os.path.join(path, f"{title}_2e15_ln.png"))
 
     plt.close()
 # ============================================================
@@ -407,7 +432,7 @@ plot_sobol_top_with_ci(
     t_eval,
     ST_V,
     ST_conf_V,
-    "ST_Viremia_2e15_bounds_novos",
+    "ST_Viremia_2e10_ln",
     "ST",
     param_names,
     top_V
@@ -417,7 +442,7 @@ plot_sobol_top_with_ci(
     t_eval,
     S1_V,
     S1_conf_V,
-    "S1_Viremia_2e15_bounds_novos",
+    "S1_Viremia_2e10_ln",
     "S1",
     param_names,
     top_V
@@ -429,13 +454,13 @@ top_C = np.argsort(score_C)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_C, ST_conf_C,
-    "ST_Citocinas_2e15_bounds_novos",
+    "ST_Citocinas_2e10_ln",
     "ST", param_names, top_C
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_C, S1_conf_C,
-    "S1_Citocinas_2e15_bounds_novos",
+    "S1_Citocinas_2e10_ln",
     "S1", param_names, top_C
 )
 
@@ -445,13 +470,13 @@ top_NK = np.argsort(score_NK)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_NK, ST_conf_NK,
-    "ST_Natural_Killers_2e15_bounds_novos",
+    "ST_Natural_Killers_2e10_ln",
     "ST", param_names, top_NK
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_NK, S1_conf_NK,
-    "S1_Natural_Killers_2e15_bounds_novos",
+    "S1_Natural_Killers_2e10_ln",
     "S1", param_names, top_NK
 )
 
@@ -461,13 +486,13 @@ top_ApM = np.argsort(score_ApM)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_ApM, ST_conf_ApM,
-    "ST_ApM_2e15_bounds_novos",
+    "ST_ApM_2e10_ln",
     "ST", param_names, top_ApM
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_ApM, S1_conf_ApM,
-    "S1_ApM_2e15_bounds_novos",
+    "S1_ApM_2e10_ln",
     "S1", param_names, top_ApM
 )
 
@@ -477,13 +502,13 @@ top_I = np.argsort(score_I)[-n_top:][::-1]
 
 plot_sobol_top_with_ci(
     t_eval, ST_I, ST_conf_I,
-    "ST_Infectadas_2e15_bounds_novos",
+    "ST_Infectadas_2e10_ln",
     "ST", param_names, top_I
 )
 
 plot_sobol_top_with_ci(
     t_eval, S1_I, S1_conf_I,
-    "S1_Infectadas_2e15_bounds_novos",
+    "S1_Infectadas_2e10_ln",
     "S1", param_names, top_I
 )
 
@@ -508,3 +533,82 @@ print("\nRanking I - ST:")
 for idx in top_I:
     print(param_names[idx], "ST =", score_I[idx])
 
+# ============================================================
+# PLOTANDO VARIÂNCIA 
+# ============================================================
+
+var_V = np.var(Y_V, axis=0)
+var_I = np.var(Y_I, axis=0)
+
+plt.figure(figsize=(10, 5))
+plt.plot(t_eval, var_V, label="Viremia")
+plt.plot(t_eval, var_I, label="Células infectadas")
+plt.xlabel("Tempo (dias)")
+plt.ylabel("Variância")
+plt.title("Variância ao longo do tempo")
+plt.legend()
+plt.tight_layout()
+plt.savefig(os.path.join(path, "Variancia_temporal_2e15_ln.png"), dpi=200)
+plt.close()
+
+pd.DataFrame({
+    "tempo_dias": t_eval,
+    "variancia_viremia": var_V,
+    "variancia_infectadas": var_I,
+}).to_csv(os.path.join(path, "variancia_temporal_2e15_ln.csv"), index=False)
+
+
+# ============================================================
+# RESULTADOS NUMÉRICOS E RANKING
+# ============================================================
+indices_por_saida = {
+    "Viremia": (S1_V, ST_V, S1_conf_V, ST_conf_V),
+    "Citocinas": (S1_C, ST_C, S1_conf_C, ST_conf_C),
+    "NK": (S1_NK, ST_NK, S1_conf_NK, ST_conf_NK),
+    "ApM": (S1_ApM, ST_ApM, S1_conf_ApM, ST_conf_ApM),
+    "Infectadas": (S1_I, ST_I, S1_conf_I, ST_conf_I),
+}
+
+resultados = []
+rankings = []
+for saida, (s1, st, s1_ci, st_ci) in indices_por_saida.items():
+    for j in range(1, n_time):
+        for k, parametro in enumerate(param_names):
+            resultados.append({
+                "variavel": saida, "tempo_dias": t_eval[j],
+                "parametro": parametro, "S1": s1[j, k],
+                "S1_conf": s1_ci[j, k], "ST": st[j, k],
+                "ST_conf": st_ci[j, k],
+            })
+    for tipo, matriz, ci in [("S1", s1, s1_ci), ("ST", st, st_ci)]:
+        for k, parametro in enumerate(param_names):
+            curva = matriz[1:, k]
+            validos = np.isfinite(curva)
+            if np.any(validos):
+                jmax = int(np.nanargmax(curva)) + 1
+                maximo = float(curva[jmax - 1])
+                media = float(np.nanmean(curva))
+                conf_max = float(ci[jmax, k])
+                tempo_max = float(t_eval[jmax])
+            else:
+                maximo = media = conf_max = tempo_max = np.nan
+            rankings.append({
+                "variavel": saida, "indice": tipo, "parametro": parametro,
+                "maximo_temporal": maximo, "tempo_do_maximo_dias": tempo_max,
+                "conf_no_maximo": conf_max, "media_temporal": media,
+            })
+
+pd.DataFrame(resultados).to_csv(
+    os.path.join(path, "sobol_indices_temporais_2e15_ln.csv"),
+    index=False, float_format="%.17g"
+)
+df_rank = pd.DataFrame(rankings)
+df_rank = df_rank.sort_values(
+    ["variavel", "indice", "maximo_temporal"],
+    ascending=[True, True, False], na_position="last"
+)
+df_rank["posicao"] = df_rank.groupby(["variavel", "indice"]).cumcount() + 1
+df_rank.to_csv(
+    os.path.join(path, "sobol_rankings_2e15_ln.csv"),
+    index=False, float_format="%.17g"
+)

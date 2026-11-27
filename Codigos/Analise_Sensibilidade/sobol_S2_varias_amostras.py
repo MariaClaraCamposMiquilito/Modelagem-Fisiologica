@@ -7,7 +7,7 @@ from SALib.sample import sobol as sobol_sample
 from SALib.analyze import sobol as sobol_analyze
 
 expoentes = [15, 16]
-caminho = "/mnt/c/Users/mique/Documents/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
+caminho = "/Modelagem-Fisiologica/Codigos/Analise_Sensibilidade/Resultados_S2_testes/"
 
 top = 10
 
